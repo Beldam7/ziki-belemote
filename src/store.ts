@@ -3,7 +3,7 @@ import { answerRequest, briefForLevel, createRequest, evaluate, resolveExpired, 
 import { HISTORY, MY_AGENTS } from './data/zikiSnapshot';
 import { ACTION_LABELS, type Agent, type Attempt, type Brief, type LogEntry, type State } from './types';
 
-const STORAGE_KEY = 'agent-briefs:v2';
+const STORAGE_KEY = 'agent-briefs:v3';
 
 /** Pseudo agent id for things the owner did by hand on Ziki. */
 export const OWNER_ID = 'owner';
@@ -71,17 +71,17 @@ function demoAttempts(now: Date): Attempt[] {
   const at = (minsAgo: number) => new Date(now.getTime() - minsAgo * 60_000).toISOString();
   const demo = (id: string, minsAgo: number, a: Omit<Attempt, 'id' | 'at' | 'source'>): Attempt => ({ id: `demo-${id}`, at: at(minsAgo), source: 'demo', ...a });
   return [
-    demo('r1', 95, { agentId: 'bebz-4', action: 'review', platform: 'Desktop', issueType: 'Fix', severity: 'medium', title: 'Demo: Settings tab order skips the Save button' }),
-    demo('r2', 80, { agentId: 'bebz-3', action: 'review', platform: 'Web', issueType: 'Fix', severity: 'low', title: 'Demo: Tooltip text is cut off on narrow screens' }),
-    demo('c1', 70, { agentId: 'bebz', action: 'comment', platform: 'Desktop', issueType: 'Fix', severity: 'medium', title: 'Demo: Asked the reporter for the Windows build log' }),
-    demo('f1', 60, { agentId: 'bebz-5', action: 'flag_duplicate', platform: 'Web', issueType: 'Fix', severity: 'medium', title: 'Demo: Login button overlaps the menu at 375 px' }),
-    demo('b1', 45, { agentId: 'bebz', action: 'bid', platform: 'Desktop', issueType: 'Fix', severity: 'medium', title: 'Demo: Emoji picker stays open after sending' }),
+    demo('r1', 95, { agentId: 'bebz-4', action: 'review', platform: 'Desktop', issueType: 'Fix', severity: 'medium', title: 'Settings tab order skips the Save button' }),
+    demo('r2', 80, { agentId: 'bebz-3', action: 'review', platform: 'Web', issueType: 'Fix', severity: 'low', title: 'Tooltip text is cut off on narrow screens' }),
+    demo('c1', 70, { agentId: 'bebz', action: 'comment', platform: 'Desktop', issueType: 'Fix', severity: 'medium', title: 'Asked the reporter for the Windows build log' }),
+    demo('f1', 60, { agentId: 'bebz-5', action: 'flag_duplicate', platform: 'Web', issueType: 'Fix', severity: 'medium', title: 'Login button overlaps the menu at 375 px' }),
+    demo('b1', 45, { agentId: 'bebz', action: 'bid', platform: 'Desktop', issueType: 'Fix', severity: 'medium', title: 'Emoji picker stays open after sending' }),
     // The Brief stops this one outright: reviewers cannot bid on Ziki.
-    demo('x1', 25, { agentId: 'bebz-4', action: 'bid', platform: 'Desktop', issueType: 'Fix', severity: 'low', title: 'Demo: Reviewer tries to bid on a fix' }),
+    demo('x1', 25, { agentId: 'bebz-4', action: 'bid', platform: 'Desktop', issueType: 'Fix', severity: 'low', title: 'Reviewer tries to bid on a fix' }),
     // These three need the owner, so they wait in Approvals (recent, so they have time left).
-    demo('o1', 12, { agentId: 'bebz', action: 'accept_offer', platform: 'Mobile', issueType: 'Fix', severity: 'medium', title: 'Demo: Reactions overlap the keyboard in DMs' }),
-    demo('b2', 8, { agentId: 'bebz', action: 'bid', platform: 'Desktop', issueType: 'Fix', severity: 'high', title: 'Demo: App crashes when a workspace has no channels' }),
-    demo('r3', 4, { agentId: 'bebz-4', action: 'review', platform: 'Web', issueType: 'Fix', severity: 'critical', title: 'Demo: Session token visible in the page source' }),
+    demo('o1', 12, { agentId: 'bebz', action: 'accept_offer', platform: 'Mobile', issueType: 'Fix', severity: 'medium', title: 'Reactions overlap the keyboard in DMs' }),
+    demo('b2', 8, { agentId: 'bebz', action: 'bid', platform: 'Desktop', issueType: 'Fix', severity: 'high', title: 'App crashes when a workspace has no channels' }),
+    demo('r3', 4, { agentId: 'bebz-4', action: 'review', platform: 'Web', issueType: 'Fix', severity: 'critical', title: 'Session token visible in the page source' }),
   ];
 }
 

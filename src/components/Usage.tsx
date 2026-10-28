@@ -1,4 +1,4 @@
-import { usageSummary } from '../engine';
+import { levelAllows, usageSummary } from '../engine';
 import { ACTION_LABELS, type Agent, type LogEntry } from '../types';
 
 interface Props {
@@ -8,7 +8,9 @@ interface Props {
 }
 
 export function Usage({ agent, log, now }: Props) {
-  const rows = usageSummary(agent.brief, log, agent.id, now).filter((r) => r.limit !== null);
+  const rows = usageSummary(agent.brief, log, agent.id, now).filter(
+    (r) => levelAllows(agent.level, r.action) && agent.brief.rules[r.action].mode !== 'never',
+  );
   if (rows.length === 0) return null;
   return (
     <section className="panel" aria-labelledby="usage-title">
@@ -22,8 +24,8 @@ export function Usage({ agent, log, now }: Props) {
             </span>
             <span className="count">
               {r.used} of {r.limit}
-              {r.warn && r.used < (r.limit ?? 0) ? ' (nearly there)' : ''}
-              {r.warn && r.used >= (r.limit ?? 0) ? ' (limit reached)' : ''}
+              {r.warn && r.used < r.limit ? ' (nearly there)' : ''}
+              {r.warn && r.used >= r.limit ? ' (limit reached)' : ''}
             </span>
           </li>
         ))}

@@ -11,7 +11,7 @@ interface Props {
 
 type Filter = 'all' | Source;
 
-const SOURCE_LABEL: Record<Source, string> = { ziki: 'From Ziki', demo: 'Demo', you: 'Simulated' };
+const SOURCE_LABEL: Record<Source, string> = { ziki: 'From Ziki', demo: '', you: 'Simulated' };
 
 export function Activity({ log, agents }: Props) {
   const [filter, setFilter] = useState<Filter>('all');
@@ -33,7 +33,6 @@ export function Activity({ log, agents }: Props) {
           <select value={filter} onChange={(e) => setFilter(e.target.value as Filter)}>
             <option value="all">Everything</option>
             <option value="ziki">From Ziki only</option>
-            <option value="demo">Demo only</option>
             <option value="you">Simulated by you</option>
           </select>
         </label>
@@ -52,7 +51,7 @@ export function Activity({ log, agents }: Props) {
               </time>
               <span className="tags">
                 <span className={`tag ${e.kind}`}>{labelFor(e.kind)}</span>
-                <span className={`tag source-${source}`}>{SOURCE_LABEL[source]}</span>
+                {SOURCE_LABEL[source] && <span className={`tag source-${source}`}>{SOURCE_LABEL[source]}</span>}
               </span>
               <span>
                 <strong>{nameOf(e.agentId)}</strong>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { levelAllows } from '../engine';
+import { SAFE_DAILY_LIMITS, effectiveLimit, levelAllows } from '../engine';
 import {
   ACTIONS,
   ACTION_LABELS,
@@ -100,6 +100,10 @@ export function BriefEditor({ agent, onSave }: Props) {
 
       <fieldset>
         <legend>2. Allowed actions and daily limits</legend>
+        <p className="muted small">
+          Only the actions a {agent.level} can take on Ziki are shown. Each limit is capped below the point where Ziki
+          refuses, flags or demotes an agent.
+        </p>
         <div className="table-wrap">
         <table className="rules">
           <thead>
@@ -110,20 +114,15 @@ export function BriefEditor({ agent, onSave }: Props) {
             </tr>
           </thead>
           <tbody>
-            {ACTIONS.map((a) => {
+            {ACTIONS.filter((a) => levelAllows(agent.level, a)).map((a) => {
               const rule = draft.rules[a];
-              const possible = levelAllows(agent.level, a);
               return (
-                <tr key={a} className={possible ? '' : 'unavailable'}>
-                  <td>
-                    {ACTION_LABELS[a]}
-                    {!possible && <span className="muted small"> · not available to a {agent.level} on Ziki</span>}
-                  </td>
+                <tr key={a}>
+                  <td>{ACTION_LABELS[a]}</td>
                   <td>
                     <select
                       aria-label={`Rule for ${ACTION_LABELS[a]}`}
-                      disabled={!possible}
-                      value={possible ? rule.mode : 'never'}
+                      value={rule.mode}
                       onChange={(e) => setRule(a, { mode: e.target.value as Mode })}
                     >
                       <option value="allow">Allow</option>
@@ -135,12 +134,18 @@ export function BriefEditor({ agent, onSave }: Props) {
                     <input
                       type="number"
                       min={0}
-                      placeholder="No limit"
+                      max={SAFE_DAILY_LIMITS[a].max}
                       aria-label={`Daily limit for ${ACTION_LABELS[a]}`}
-                      disabled={!possible}
-                      value={rule.dailyLimit ?? ''}
-                      onChange={(e) => setRule(a, { dailyLimit: e.target.value === '' ? null : Math.max(0, Number(e.target.value)) })}
+                      aria-describedby={`max-${a}`}
+                      value={effectiveLimit(a, rule.dailyLimit)}
+                      onChange={(e) => {
+                        const n = e.target.value === '' ? SAFE_DAILY_LIMITS[a].max : Math.floor(Number(e.target.value));
+                        setRule(a, { dailyLimit: effectiveLimit(a, Math.max(0, n)) });
+                      }}
                     />
+                    <span id={`max-${a}`} className="muted small limit-max">
+                      Max {SAFE_DAILY_LIMITS[a].max}. {SAFE_DAILY_LIMITS[a].why}
+                    </span>
                   </td>
                 </tr>
               );

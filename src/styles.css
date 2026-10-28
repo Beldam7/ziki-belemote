@@ -58,13 +58,13 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 16px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font: 14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 .shell {
   max-width: 1152px;
   margin: 0 auto;
-  padding: 24px 16px 48px;
+  padding: 40px 24px 48px;
   display: grid;
   /* minmax(0, 1fr) lets wide tables scroll inside their panel instead of widening the page. */
   grid-template-columns: minmax(0, 1fr);
@@ -72,8 +72,9 @@ body {
 }
 
 h1 {
-  margin: 0;
-  font-size: 28px;
+  margin: 0 0 6px;
+  font-size: 30px;
+  line-height: 1.2;
   font-weight: 800;
   letter-spacing: -0.01em;
 }
@@ -81,7 +82,8 @@ h1 {
 h2 {
   margin: 0 0 4px;
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 h3 {
@@ -95,6 +97,10 @@ p {
 
 .muted {
   color: var(--muted);
+}
+
+.top > div > p {
+  font-size: 15px;
 }
 
 .top,
@@ -177,7 +183,7 @@ select {
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 8px 12px;
-  min-height: 42px;
+  min-height: 40px;
 }
 
 input[type='number'] {
@@ -191,7 +197,7 @@ button {
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 0 20px;
-  min-height: 42px;
+  min-height: 40px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -247,7 +253,19 @@ th {
   color: var(--head);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.08em;
+  background: var(--tint);
+  border-bottom: 0;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+th:first-child {
+  border-radius: 20px 0 0 20px;
+}
+
+th:last-child {
+  border-radius: 0 20px 20px 0;
 }
 
 tr.selected td {
@@ -461,10 +479,6 @@ button.scenario:hover {
   align-content: start;
 }
 
-tr.unavailable td {
-  color: var(--muted);
-}
-
 .tag.history,
 .tag.source-ziki {
   color: var(--accent);
@@ -515,4 +529,353 @@ tr.unavailable td {
     text-transform: uppercase;
     color: var(--head);
   }
+}
+
+/* Ziki dashboard top bar: Agent Briefs is reached from the Agents menu. */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.topnav-inner {
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 0 24px;
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.topnav svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+
+.topnav svg.chev {
+  width: 14px;
+  height: 14px;
+}
+
+.topnav a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  padding-right: 14px;
+  border-right: 1px solid var(--line);
+}
+
+.project {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.teams {
+  display: flex;
+  gap: 24px;
+  margin-left: 22px;
+}
+
+.teams a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text2);
+  font-weight: 600;
+}
+
+.teams a:hover {
+  color: var(--text);
+}
+
+.topnav-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.agents-btn svg:first-child {
+  color: var(--accent);
+}
+
+.pill.user {
+  padding-left: 4px;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #4f5bd5;
+  color: #fff;
+  font-weight: 700;
+}
+
+.pts {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--warn-bg);
+  color: var(--warn);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bell {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+}
+
+.bell svg {
+  width: 20px;
+  height: 20px;
+}
+
+.menu-wrap {
+  position: relative;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 258px;
+  max-width: calc(100vw - 32px);
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.25);
+  display: grid;
+  gap: 2px;
+}
+
+.menu-head {
+  margin: 4px 10px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+button.menu-agent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  font-size: 15px;
+}
+
+button.menu-agent:hover,
+.menu-link:hover {
+  background: var(--chip);
+}
+
+.chip-initials {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--tint);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.menu-name {
+  flex: 1;
+}
+
+.role {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--tint);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.menu hr {
+  width: 100%;
+  margin: 8px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.topnav .menu-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  color: var(--text2);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.topnav .menu-link.accent {
+  color: var(--accent);
+}
+
+.topnav .menu-link.current {
+  color: var(--accent);
+  background: var(--tint);
+}
+
+.badge-new {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}
+
+h1 .badge-new {
+  font-size: 13px;
+  margin-left: 8px;
+}
+
+@media (max-width: 1000px) {
+  .teams {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .topnav-inner {
+    min-height: 60px;
+    padding: 0 16px;
+    gap: 10px;
+  }
+
+  .brand {
+    padding-right: 10px;
+  }
+
+  .brand span,
+  .project,
+  .hide-sm {
+    display: none;
+  }
+
+  .brand {
+    border-right: 0;
+  }
+
+  .topnav-right {
+    gap: 6px;
+  }
+
+  .pill {
+    min-height: 40px;
+    padding: 0 10px;
+    gap: 4px;
+  }
+
+  .pill.user {
+    padding: 0;
+    border: 0;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .pts {
+    padding: 0 10px;
+  }
+
+  .menu {
+    position: fixed;
+    top: 60px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-width: none;
+    transform: none;
+  }
+
+  .shell {
+    padding: 28px 16px 40px;
+  }
+
+  h1 {
+    font-size: 26px;
+  }
+}
+
+.limit-max {
+  display: block;
+  max-width: 260px;
+  margin-top: 4px;
+}
+
+/* Names in dashboard tables read as bold titles, not underlined links. */
+table.agents th,
+table.agents td {
+  white-space: nowrap;
+}
+
+td button.link {
+  text-align: left;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+td button.link:hover {
+  color: var(--accent);
 }

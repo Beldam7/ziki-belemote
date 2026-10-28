@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { answerRequest, createRequest, defaultBrief, evaluate, resolveExpired, usedToday } from './engine';
+import { answerRequest, createRequest, defaultBrief, effectiveLimit, evaluate, resolveExpired, usedToday } from './engine';
 import type { Attempt, Brief, LogEntry } from './types';
 
 const NOW = new Date('2026-10-28T12:00:00.000Z');
@@ -145,5 +145,20 @@ describe('approval lifecycle', () => {
     expect(answerRequest({ ...r, status: 'waiting' }, false, NOW).status).toBe('denied');
     const closed = { ...r, status: 'skipped' as const };
     expect(answerRequest(closed, true, NOW).status).toBe('skipped');
+  });
+});
+
+describe('safe daily limits', () => {
+  it('never lets a Brief set a limit above what Ziki tolerates', () => {
+    expect(effectiveLimit('bid', 50)).toBe(2);
+    expect(effectiveLimit('flag_duplicate', 10)).toBe(8);
+    expect(effectiveLimit('comment', null)).toBe(30);
+    expect(effectiveLimit('review', 5)).toBe(5);
+  });
+
+  it('blocks at the safe maximum even if a stored Brief asks for more', () => {
+    const b = brief({ rules: { ...defaultBrief(NOW).rules, bid: { mode: 'allow', dailyLimit: 99 } } });
+    expect(evaluate(b, 1, attempt()).outcome).toBe('allowed');
+    expect(evaluate(b, 2, attempt()).outcome).toBe('blocked');
   });
 });

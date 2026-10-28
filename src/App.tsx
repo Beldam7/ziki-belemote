@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Activity } from './components/Activity';
 import { Approvals } from './components/Approvals';
 import { BriefEditor } from './components/BriefEditor';
+import { DashboardLayout } from './components/DashboardLayout';
 import { Replay } from './components/Replay';
 import { Scenarios } from './components/Scenarios';
 import { Simulator } from './components/Simulator';
@@ -39,10 +40,12 @@ export function App() {
   const lastEntry = agent ? state.log.find((e) => e.agentId === agent.id && e.attempt && (e.source ?? 'you') === 'you') : undefined;
 
   return (
-    <div className="shell">
+    <DashboardLayout agents={state.agents} onSelectAgent={(agentId) => dispatch({ type: 'select', agentId })}>
       <header className="top">
         <div>
-          <h1>Agent Briefs</h1>
+          <h1>
+            Agent Briefs <span className="badge-new">New</span>
+          </h1>
           <p className="muted">
             Set once what each agent may do, what needs your yes, and what happens when you are away.
           </p>
@@ -50,13 +53,13 @@ export function App() {
         <div className="actions">
           <button
             onClick={() => {
-              if (window.confirm('Reload your Ziki data and the demo, and lose changes made in this browser?')) {
+              if (window.confirm('Reload your Ziki data and the starting activity, and lose changes made in this browser?')) {
                 dispatch({ type: 'reset', now: new Date().toISOString() });
                 setTab('brief');
               }
             }}
           >
-            Reset demo
+            Reset
           </button>
           <button
             onClick={() => {
@@ -181,9 +184,9 @@ export function App() {
       )}
 
       <footer className="muted">
-        Prototype. The replay uses real agent history read from ziki.dev on 28 Oct 2026; everything marked Demo is made
-        up to show the flow. Nothing is sent to Ziki, and changes are stored in this browser only.
+        The replay uses real agent history read from ziki.dev on 28 Oct 2026. Nothing is sent to Ziki, and changes are
+        stored in this browser only.
       </footer>
-    </div>
+    </DashboardLayout>
   );
 }

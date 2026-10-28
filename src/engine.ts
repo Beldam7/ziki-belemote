@@ -29,6 +29,28 @@ export function levelAllows(level: Agent['level'], action: ActionKind): boolean 
   return LEVEL_ACTIONS[level].includes(action);
 }
 
+/**
+ * The highest daily limit a Brief may set for each action, so an agent never gets
+ * close to what Ziki refuses, flags or demotes for (see https://ziki.dev/llms.txt).
+ */
+export const SAFE_DAILY_LIMITS: Record<ActionKind, { max: number; why: string }> = {
+  bid: { max: 2, why: 'Ziki lets one person hold at most 2 active claims, and a bid that wins becomes a claim.' },
+  accept_offer: {
+    max: 2,
+    why: 'Ziki lets one person hold at most 2 active claims, and 3 claims released for silence in 7 days demotes a contributor.',
+  },
+  review: { max: 30, why: "Ziki's standard write budget is 30 per hour." },
+  flag_duplicate: { max: 8, why: 'Ziki demoted Bebz 5.0 from triager after 10 flags in one run.' },
+  report: { max: 30, why: "Ziki's standard write budget is 30 per hour." },
+  comment: { max: 30, why: "Ziki's standard write budget is 30 per hour." },
+};
+
+/** The limit that applies: the Brief's own, never above the safe maximum. */
+export function effectiveLimit(action: ActionKind, dailyLimit: number | null): number {
+  const { max } = SAFE_DAILY_LIMITS[action];
+  return dailyLimit === null ? max : Math.min(dailyLimit, max);
+}
+
 export function severityRank(s: Severity): number {
   return SEVERITIES.indexOf(s);
 }
@@ -43,9 +65,9 @@ export function defaultBrief(now: Date = new Date()): Brief {
       bid: { mode: 'allow', dailyLimit: 2 },
       accept_offer: { mode: 'allow', dailyLimit: 2 },
       review: { mode: 'allow', dailyLimit: 10 },
-      flag_duplicate: { mode: 'never', dailyLimit: null },
+      flag_duplicate: { mode: 'never', dailyLimit: 8 },
       report: { mode: 'ask', dailyLimit: 3 },
-      comment: { mode: 'allow', dailyLimit: null },
+      comment: { mode: 'allow', dailyLimit: 30 },
     },
     askTimeoutMinutes: 30,
     onTimeout: 'skip',
@@ -107,9 +129,9 @@ export function usedToday(log: LogEntry[], agentId: string, action: ActionKind, 
 export function usageSummary(brief: Brief, log: LogEntry[], agentId: string, nowIso: string) {
   return ACTIONS.map((action) => {
     const used = usedToday(log, agentId, action, nowIso);
-    const limit = brief.rules[action].dailyLimit;
+    const limit = effectiveLimit(action, brief.rules[action].dailyLimit);
     const ratio = limit ? used / limit : 0;
-    return { action, used, limit, ratio, warn: limit !== null && limit > 0 && ratio >= WARN_AT };
+    return { action, used, limit, ratio, warn: limit > 0 && ratio >= WARN_AT };
   });
 }
 
@@ -121,6 +143,7 @@ export function evaluate(
   level?: Agent['level'],
 ): Decision {
   const rule = brief.rules[attempt.action];
+  const limit = effectiveLimit(attempt.action, rule.dailyLimit);
   const label = ACTION_LABELS[attempt.action].toLowerCase();
 
   if (paused) {
@@ -132,10 +155,10 @@ export function evaluate(
   if (rule.mode === 'never') {
     return { outcome: 'blocked', reason: `The Brief says never to ${label}.` };
   }
-  if (rule.dailyLimit !== null && used >= rule.dailyLimit) {
+  if (used >= limit) {
     return {
       outcome: 'blocked',
-      reason: `Daily limit reached (${used} of ${rule.dailyLimit} ${ACTION_NOUNS[attempt.action]}). Stopped before it was sent to Ziki.`,
+      reason: `Daily limit reached (${used} of ${limit} ${ACTION_NOUNS[attempt.action]}). Stopped before it was sent to Ziki.`,
     };
   }
   if (!brief.platforms.includes(attempt.platform)) {
@@ -155,8 +178,8 @@ export function evaluate(
   }
 
   const decision: Decision = { outcome: 'allowed', reason: `Within the Brief: ${label}.` };
-  if (rule.dailyLimit !== null && rule.dailyLimit > 0 && (used + 1) / rule.dailyLimit >= WARN_AT) {
-    decision.warning = `${used + 1} of ${rule.dailyLimit} ${ACTION_NOUNS[attempt.action]} used today.`;
+  if (limit > 0 && (used + 1) / limit >= WARN_AT) {
+    decision.warning = `${used + 1} of ${limit} ${ACTION_NOUNS[attempt.action]} used today.`;
   }
   return decision;
 }

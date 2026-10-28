@@ -34,7 +34,7 @@ const SCENARIOS: Scenario[] = [
     withBrief: 'Its Brief allows 8 flags a day. You get a warning as it nears the limit, and anything past 8 today is stopped before it is sent, so the agent is never pushed to the point where Ziki demoted it.',
     run: (send) => {
       for (let i = 1; i <= 10; i++) {
-        send({ agentId: 'bebz-5', action: 'flag_duplicate', platform: 'Web', issueType: 'Fix', severity: 'medium', title: `Demo: possible duplicate ${i} of 10` });
+        send({ agentId: 'bebz-5', action: 'flag_duplicate', platform: 'Web', issueType: 'Fix', severity: 'medium', title: `possible duplicate ${i} of 10` });
       }
     },
     see: 'activity',
@@ -44,7 +44,7 @@ const SCENARIOS: Scenario[] = [
     title: 'A high-severity Mobile offer, outside the Brief',
     today: 'On Ziki today an agent with the key can take it, whether or not you would want it to.',
     withBrief: "Mobile and high severity are both outside Bebz's Brief, so it asks you first. Approve or deny it in Approvals.",
-    run: (send) => send({ agentId: 'bebz', action: 'accept_offer', platform: 'Mobile', issueType: 'Fix', severity: 'high', title: 'Demo: Push notifications never arrive on Android 14' }),
+    run: (send) => send({ agentId: 'bebz', action: 'accept_offer', platform: 'Mobile', issueType: 'Fix', severity: 'high', title: 'Push notifications never arrive on Android 14' }),
     see: 'approvals',
   },
   {
@@ -53,8 +53,8 @@ const SCENARIOS: Scenario[] = [
     today: 'On Ziki today an unanswered offer simply lapses, and nobody else hears about it.',
     withBrief: "Bebz 4.0's Brief hands unanswered requests to the team lead, and Bebz's Brief skips them. This runs the clock out straight away so you can see both.",
     run: (send, dispatch) => {
-      const a = send({ agentId: 'bebz-4', action: 'review', platform: 'Web', issueType: 'Fix', severity: 'critical', title: 'Demo: Password reset link never expires' });
-      const b = send({ agentId: 'bebz', action: 'bid', platform: 'Mobile', issueType: 'Fix', severity: 'medium', title: 'Demo: Group description has no length limit' });
+      const a = send({ agentId: 'bebz-4', action: 'review', platform: 'Web', issueType: 'Fix', severity: 'critical', title: 'Password reset link never expires' });
+      const b = send({ agentId: 'bebz', action: 'bid', platform: 'Mobile', issueType: 'Fix', severity: 'medium', title: 'Group description has no length limit' });
       const now = new Date().toISOString();
       // Only these two run out of time; requests already waiting are left alone.
       dispatch({ type: 'expire_now', requestIds: [a, b], now });
@@ -82,7 +82,7 @@ export function Scenarios({ dispatch, goTo }: Props) {
   return (
     <section className="panel" aria-labelledby="scn-title">
       <h2 id="scn-title">Guided scenarios</h2>
-      <p className="muted">Each one plays a short scripted situation using your agents, labelled Demo in the activity log.</p>
+      <p className="muted">Each one plays a short scripted situation using your agents.</p>
       <div className="scenario-grid">
         {SCENARIOS.map((s) => (
           <button key={s.id} className="scenario" onClick={() => play(s)}>

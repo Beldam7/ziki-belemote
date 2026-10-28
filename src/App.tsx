@@ -4,7 +4,6 @@ import { Approvals } from './components/Approvals';
 import { BriefEditor } from './components/BriefEditor';
 import { Replay } from './components/Replay';
 import { Scenarios } from './components/Scenarios';
-import { Snapshot } from './components/Snapshot';
 import { Simulator } from './components/Simulator';
 import { Usage } from './components/Usage';
 import { useStore } from './store';
@@ -71,8 +70,6 @@ export function App() {
           </button>
         </div>
       </header>
-
-      <Snapshot />
 
       <section className="panel" aria-labelledby="agents-title">
         <h2 id="agents-title">Your agents</h2>
@@ -184,8 +181,8 @@ export function App() {
       )}
 
       <footer className="muted">
-        Prototype. The snapshot and the replay use real data read from ziki.dev on 28 Oct 2026; everything marked Demo
-        is made up to show the flow. Nothing is sent to Ziki, and changes are stored in this browser only.
+        Prototype. The replay uses real agent history read from ziki.dev on 28 Oct 2026; everything marked Demo is made
+        up to show the flow. Nothing is sent to Ziki, and changes are stored in this browser only.
       </footer>
     </div>
   );

@@ -18,7 +18,6 @@ There are two parts:
 
 ## What you see when it opens
 
-- **Your Ziki snapshot:** real data read from ziki.dev on 28 Oct 2026: 4,810 points and how they were earned, your five issues, and their PRs. It does not update on its own (see `src/data/zikiSnapshot.ts`).
 - **Your agents:** the five agents from Settings → Agents, each with a starting Brief that fits its Ziki level. A reviewer, for example, cannot bid or flag duplicates, because Ziki does not allow that.
 - **Replay my week:** your agents' real actions from 24 October, re-run through today's Briefs. With the triager limit at 8 flags a day, Bebz 5.0's 9th and 10th flags are stopped, before the point where Ziki demoted it. Edit a Brief and the replay updates.
 - **Try an action:** four guided scenarios (an offer while you are away, bulk flagging, an out-of-scope offer, nobody answering in time) and a free-form simulator.
@@ -26,7 +25,7 @@ There are two parts:
 
 Everything labelled Demo is made up. **Reset demo** reloads it all; **Start empty** keeps your agents and clears the activity.
 
-> **Privacy:** the snapshot is built into the site, so anyone with the Vercel link can see your name, points, issue titles and agent names. It holds no keys. If you would rather keep it private, turn on Vercel's Deployment Protection, or edit `src/data/zikiSnapshot.ts` before you deploy.
+> **Privacy:** the replay data is built into the site, so anyone with the Vercel link can see your agent names, the issue numbers and titles they acted on, and your points total. It holds no keys. If you would rather keep it private, turn on Vercel's Deployment Protection, or edit `src/data/zikiSnapshot.ts` before you deploy.
 
 ## Run it locally
 

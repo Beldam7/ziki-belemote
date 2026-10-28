@@ -1,4 +1,4 @@
-import { HISTORY, ZIKI_BASE } from '../data/zikiSnapshot';
+import { HISTORY, OWNER, ZIKI_BASE } from '../data/zikiSnapshot';
 import { replay, summarise } from '../replay';
 import { ACTION_LABELS, type Agent } from '../types';
 
@@ -13,6 +13,9 @@ const OUTCOME_CLASS = { allowed: 'auto_allowed', needs_approval: 'requested', bl
 export function Replay({ agents, onEditBrief }: Props) {
   const rows = replay(HISTORY, agents);
   const summary = summarise(rows);
+  const flags = HISTORY.filter((e) => e.action === 'flag_duplicate');
+  const flagPoints = flags.reduce((sum, e) => sum + e.points, 0);
+  const stoppedCount = rows.filter((r) => r.agent.id === 'bebz-5' && r.decision.outcome !== 'allowed').length;
 
   return (
     <section className="panel" aria-labelledby="replay-title">
@@ -20,6 +23,13 @@ export function Replay({ agents, onEditBrief }: Props) {
       <p className="muted">
         These are your agents' real actions on Ziki, from 24 October. Each row shows what the agent's current Brief would
         have done. Edit a Brief and this page updates.
+      </p>
+      <p>
+        These {flags.length.toLocaleString()} duplicate flags earned {flagPoints.toLocaleString()} of your{' '}
+        {OWNER.points.toLocaleString()} points.{' '}
+        {stoppedCount === 0
+          ? "Under today's Briefs, none of Bebz 5.0's would have been stopped."
+          : `Under today's Briefs, ${stoppedCount.toLocaleString()} of Bebz 5.0's would have been stopped before the demotion.`}
       </p>
 
       <ul className="summary">

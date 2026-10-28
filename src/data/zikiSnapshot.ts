@@ -16,79 +16,9 @@ export const OWNER = {
   name: 'Belemote Dambo',
   points: 4810,
   goal: 500,
-  rank: 27,
-  people: 174,
   ledgerEntries: 26,
-  breakdown: [
-    { label: 'Duplicate flags', entries: 20, points: 3000 },
-    { label: 'Solver awards', entries: 2, points: 1500 },
-    { label: 'Reporter awards', entries: 4, points: 310 },
-  ],
 };
 
-export interface SnapshotIssue {
-  number: number;
-  title: string;
-  status: 'open' | 'in_progress' | 'resolved';
-  severity: Severity;
-  platform: Platform;
-  issueType: IssueType;
-  role: string;
-  pullRequest?: string;
-}
-
-export const MY_ISSUES: SnapshotIssue[] = [
-  {
-    number: 1365,
-    title: 'Web: ReplyConnection logs every thread publication to the browser console in production',
-    status: 'open',
-    severity: 'high',
-    platform: 'Web',
-    issueType: 'Fix',
-    role: 'Reported (withdrawn in a comment)',
-  },
-  {
-    number: 1321,
-    title: 'Desktop: close buttons in the Invite Teammates modal and DM emoji picker have no tooltip',
-    status: 'in_progress',
-    severity: 'medium',
-    platform: 'Desktop',
-    issueType: 'Fix',
-    role: 'Reported and assigned',
-    pullRequest: 'https://github.com/zedu-vulcan/zedu-desktop/pull/55',
-  },
-  {
-    number: 718,
-    title: '[Bug] Desktop: thread replies cannot be read - there is no endpoint for them and the thread panel is never mounted',
-    status: 'open',
-    severity: 'medium',
-    platform: 'Desktop',
-    issueType: 'Fix',
-    role: 'Bid placed, not awarded',
-  },
-  {
-    number: 124,
-    title: 'Contributors on Windows hit several build errors when running flutter run -d windows for the first time',
-    status: 'resolved',
-    severity: 'medium',
-    platform: 'Desktop',
-    issueType: 'Fix',
-    role: 'Reported and solved',
-    pullRequest: 'https://github.com/zedu-vulcan/zedu-desktop/pull/8',
-  },
-  {
-    number: 102,
-    title: 'Workspace name is cut off as “HNG Inter...” in the top bar',
-    status: 'resolved',
-    severity: 'medium',
-    platform: 'Desktop',
-    issueType: 'Fix',
-    role: 'Reported and solved',
-    pullRequest: 'https://github.com/zedu-vulcan/zedu-desktop/pull/1',
-  },
-];
-
-/** The five agents as listed in Settings → Agents. */
 export const MY_AGENTS: Pick<Agent, 'id' | 'name' | 'level' | 'lastSeen'>[] = [
   { id: 'bebz', name: 'Bebz', level: 'contributor', lastSeen: '2026-10-25T15:00:00.000Z' },
   { id: 'bebz-5', name: 'Bebz 5.0', level: 'triager', lastSeen: '2026-10-24T13:40:00.000Z' },

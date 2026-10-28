@@ -110,7 +110,7 @@ export function reducer(state: State, action: Action): State {
         ...state,
         agents,
         requests: [request, ...state.requests],
-        log: [entry(`log-${attempt.id}`, attempt.at, agent, 'requested', `Asked the owner: ${decision.reason}`, attempt), ...state.log],
+        log: [entry(`log-${attempt.id}`, attempt.at, agent, 'requested', decision.reason, attempt), ...state.log],
       };
     }
 

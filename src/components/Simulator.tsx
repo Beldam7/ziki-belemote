@@ -56,9 +56,10 @@ export function Simulator({ agent, lastEntry, onAttempt }: Props) {
     const pick = <T,>(list: readonly T[], i: number): T => list[i % list.length];
     for (let i = 0; i < 14; i++) {
       send({
-        action: pick(ACTIONS, i * 3 + 1),
-        platform: pick(PLATFORMS, i),
-        issueType: pick(ISSUE_TYPES, i * 2),
+        // Different strides so every action, platform, type and severity shows up.
+        action: pick(ACTIONS, i),
+        platform: pick(PLATFORMS, i * 2 + 1),
+        issueType: pick(ISSUE_TYPES, i * 3),
         severity: pick(SEVERITIES, i + 1),
         title: pick(SAMPLE_TITLES, i),
       });

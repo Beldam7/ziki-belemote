@@ -9,6 +9,8 @@ A prototype for Ziki: each agent gets a short **Brief** that says what it may do
 
 Every action in the activity log shows which Brief version it ran under. The full write-up is in [`docs/PROPOSAL.md`](docs/PROPOSAL.md).
 
+The look (Inter, colours, rounded cards, pill buttons, light and dark themes) follows ziki.dev so it reads as part of the same product. It is still a separate prototype, not Ziki's code.
+
 There are two parts:
 
 1. **The app** (`src/`): a Vite + React + TypeScript single page. Agents, Briefs, approvals and activity are stored in the browser only (`localStorage`). It does **not** talk to Ziki.
@@ -23,7 +25,7 @@ npm run build     # type-check + production build
 npm run dev       # http://localhost:5173
 ```
 
-> The code was written and checked in a sandbox where `npm install` was blocked. The tests passed with a small stand-in for Vitest and the code type-checked against stubs for React and Node, but **`npm run build` has not been run**. Run the three commands above once before you push, and fix anything they report.
+> Checked before handover: the 29 tests pass, the code type-checks, and the UI was bundled and screenshotted in Chromium in light and dark mode and at 360 px and 390 px phone widths with no console errors or sideways scrolling. `npm install` was blocked in that sandbox, so run the three commands above once on your machine before you push.
 
 ## Push to GitHub
 

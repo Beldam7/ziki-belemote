@@ -1,31 +1,52 @@
 :root {
-  --bg: #f6f7f9;
+  /* Matched to the look of ziki.dev (light theme tokens). */
+  --bg: #f5f7fc;
   --panel: #ffffff;
-  --text: #14171c;
-  --muted: #5b6573;
-  --line: #dfe3ea;
-  --accent: #4a3fd6;
+  --text: #15121f;
+  --text2: #3e4a63;
+  --muted: #5f6577;
+  --line: #e3e8f2;
+  --divider: #eef1f7;
+  --tint: #eaf2fe;
+  --chip: #f0f2f7;
+  --accent: #1f5fd9;
   --accent-text: #ffffff;
-  --ok: #0f7a43;
-  --warn: #9a6200;
-  --bad: #b3261e;
-  --ask: #4a3fd6;
+  --head: #3e4a63;
+  --ok: #146c43;
+  --ok-bg: #e3f6ec;
+  --warn: #7a4e00;
+  --warn-bg: #fdf3d7;
+  --warn-bar: #d4931a;
+  --bad: #a3261a;
+  --bad-bg: #fde8e4;
+  --ask: #1d4fb8;
+  --ask-bg: #e7f0ff;
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1216;
-    --panel: #171b21;
-    --text: #e8ebf0;
-    --muted: #98a2b1;
-    --line: #2a313b;
-    --accent: #8c84ff;
-    --accent-text: #0f1216;
+    --bg: #070f22;
+    --panel: #0e1a33;
+    --text: #e8eef9;
+    --text2: #c3cde0;
+    --muted: #9aa6bd;
+    --line: #22324f;
+    --divider: #1a2742;
+    --tint: #13254a;
+    --chip: #16243f;
+    --accent: #679bf8;
+    --accent-text: #070f22;
+    --head: #8fc9ff;
     --ok: #4cc38a;
-    --warn: #e0a93b;
-    --bad: #ff7b72;
-    --ask: #8c84ff;
+    --ok-bg: #0f2e22;
+    --warn: #f0cd72;
+    --warn-bg: #2e2510;
+    --warn-bar: #f0cd72;
+    --bad: #ff8a7a;
+    --bad-bg: #351815;
+    --ask: #95b5f9;
+    --ask-bg: #13254a;
   }
 }
 
@@ -37,25 +58,30 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font: 16px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 .shell {
-  max-width: 960px;
+  max-width: 1152px;
   margin: 0 auto;
   padding: 24px 16px 48px;
   display: grid;
+  /* minmax(0, 1fr) lets wide tables scroll inside their panel instead of widening the page. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
 h1 {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 h2 {
   margin: 0 0 4px;
-  font-size: 1.1rem;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 h3 {
@@ -89,13 +115,14 @@ p {
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 20px;
+  padding: 22px;
 }
 
 fieldset {
+  min-width: 0;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   margin: 16px 0 0;
   padding: 12px 16px 16px;
 }
@@ -148,9 +175,9 @@ select {
   color: var(--text);
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 6px 8px;
-  min-height: 36px;
+  border-radius: 10px;
+  padding: 8px 12px;
+  min-height: 42px;
 }
 
 input[type='number'] {
@@ -162,9 +189,11 @@ button {
   color: var(--text);
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 6px 12px;
-  min-height: 36px;
+  border-radius: 999px;
+  padding: 0 20px;
+  min-height: 42px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -198,6 +227,7 @@ select:focus-visible {
 
 .table-wrap {
   overflow-x: auto;
+  max-width: 100%;
 }
 
 table {
@@ -208,18 +238,20 @@ table {
 th,
 td {
   text-align: left;
-  padding: 8px;
-  border-bottom: 1px solid var(--line);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--divider);
 }
 
 th {
-  font-size: 0.8rem;
-  color: var(--muted);
-  font-weight: 600;
+  font-size: 12px;
+  color: var(--head);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
 }
 
 tr.selected td {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  background: var(--tint);
 }
 
 .add {
@@ -245,7 +277,7 @@ tr.selected td {
 
 .tabs button.active {
   border-bottom-color: var(--accent);
-  font-weight: 600;
+  color: var(--accent);
 }
 
 .actions {
@@ -257,8 +289,8 @@ tr.selected td {
 
 .result {
   margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
+  padding: 12px 16px;
+  border-radius: 14px;
   border: 1px solid var(--line);
 }
 
@@ -287,7 +319,7 @@ tr.selected td {
 
 .usage li {
   display: grid;
-  grid-template-columns: 1fr 140px 150px;
+  grid-template-columns: 1fr 140px 190px;
   gap: 12px;
   align-items: center;
   padding: 6px 0;
@@ -308,12 +340,12 @@ tr.selected td {
 }
 
 .usage li.warn .bar span {
-  background: var(--warn);
+  background: var(--warn-bar);
 }
 
 .card {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   padding: 12px;
   margin-bottom: 8px;
 }
@@ -324,7 +356,7 @@ tr.selected td {
 
 .log li {
   display: grid;
-  grid-template-columns: 80px 110px 1fr;
+  grid-template-columns: 100px 120px 1fr;
   gap: 12px;
   padding: 8px 0;
   border-bottom: 1px solid var(--line);
@@ -337,6 +369,7 @@ tr.selected td {
   padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid var(--line);
+  background: var(--chip);
   height: fit-content;
   text-align: center;
 }
@@ -344,25 +377,29 @@ tr.selected td {
 .tag.auto_allowed,
 .tag.approved {
   color: var(--ok);
-  border-color: var(--ok);
+  background: var(--ok-bg);
+  border-color: transparent;
 }
 
 .tag.blocked,
 .tag.denied {
   color: var(--bad);
-  border-color: var(--bad);
+  background: var(--bad-bg);
+  border-color: transparent;
 }
 
 .tag.requested,
 .tag.handed_off {
   color: var(--ask);
-  border-color: var(--ask);
+  background: var(--ask-bg);
+  border-color: transparent;
 }
 
 .tag.skipped,
 .tag.paused {
   color: var(--warn);
-  border-color: var(--warn);
+  background: var(--warn-bg);
+  border-color: transparent;
 }
 
 @media (max-width: 640px) {

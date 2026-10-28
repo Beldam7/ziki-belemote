@@ -99,6 +99,7 @@ export function BriefEditor({ agent, onSave }: Props) {
 
       <fieldset>
         <legend>2. Allowed actions and daily limits</legend>
+        <div className="table-wrap">
         <table className="rules">
           <thead>
             <tr>
@@ -139,6 +140,7 @@ export function BriefEditor({ agent, onSave }: Props) {
             })}
           </tbody>
         </table>
+        </div>
       </fieldset>
 
       <fieldset>

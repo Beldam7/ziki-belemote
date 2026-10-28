@@ -2,19 +2,24 @@ import { useEffect, useState } from 'react';
 import { Activity } from './components/Activity';
 import { Approvals } from './components/Approvals';
 import { BriefEditor } from './components/BriefEditor';
+import { Replay } from './components/Replay';
+import { Scenarios } from './components/Scenarios';
+import { Snapshot } from './components/Snapshot';
 import { Simulator } from './components/Simulator';
 import { Usage } from './components/Usage';
 import { useStore } from './store';
 import type { Agent } from './types';
 
-type Tab = 'brief' | 'try' | 'approvals' | 'activity';
+type Tab = 'brief' | 'try' | 'replay' | 'approvals' | 'activity';
 
 function timeAgo(iso: string | null, now: Date): string {
   if (!iso) return 'Never';
   const mins = Math.round((now.getTime() - new Date(iso).getTime()) / 60_000);
   if (mins < 1) return 'Just now';
   if (mins < 60) return `${mins} min ago`;
-  return `${Math.round(mins / 60)} h ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 48) return `${hours} h ago`;
+  return `${Math.round(hours / 24)} days ago`;
 }
 
 export function App() {
@@ -31,7 +36,8 @@ export function App() {
 
   const agent = state.agents.find((a) => a.id === state.selectedAgentId) ?? state.agents[0];
   const pendingCount = state.requests.filter((r) => r.status === 'pending' || r.status === 'waiting').length;
-  const lastEntry = agent ? state.log.find((e) => e.agentId === agent.id && e.attempt) : undefined;
+  // Only results from the simulator itself, not the seeded demo or real history.
+  const lastEntry = agent ? state.log.find((e) => e.agentId === agent.id && e.attempt && (e.source ?? 'you') === 'you') : undefined;
 
   return (
     <div className="shell">
@@ -42,16 +48,31 @@ export function App() {
             Set once what each agent may do, what needs your yes, and what happens when you are away.
           </p>
         </div>
-        <button
-          onClick={() => {
-            if (window.confirm('Clear all agents, Briefs and activity stored in this browser?')) {
-              dispatch({ type: 'reset', now: new Date().toISOString() });
-            }
-          }}
-        >
-          Reset demo data
-        </button>
+        <div className="actions">
+          <button
+            onClick={() => {
+              if (window.confirm('Reload your Ziki data and the demo, and lose changes made in this browser?')) {
+                dispatch({ type: 'reset', now: new Date().toISOString() });
+                setTab('brief');
+              }
+            }}
+          >
+            Reset demo
+          </button>
+          <button
+            onClick={() => {
+              if (window.confirm('Keep your five agents but clear all activity and approvals?')) {
+                dispatch({ type: 'reset', now: new Date().toISOString(), empty: true });
+                setTab('brief');
+              }
+            }}
+          >
+            Start empty
+          </button>
+        </div>
       </header>
+
+      <Snapshot />
 
       <section className="panel" aria-labelledby="agents-title">
         <h2 id="agents-title">Your agents</h2>
@@ -116,6 +137,7 @@ export function App() {
               [
                 ['brief', 'Brief'],
                 ['try', 'Try an action'],
+                ['replay', 'Replay my week'],
                 ['approvals', `Approvals${pendingCount ? ` (${pendingCount})` : ''}`],
                 ['activity', 'Activity'],
               ] as [Tab, string][]
@@ -135,6 +157,7 @@ export function App() {
           )}
           {tab === 'try' && (
             <>
+              <Scenarios dispatch={dispatch} goTo={setTab} />
               <Simulator agent={agent} lastEntry={lastEntry} onAttempt={(attempt) => dispatch({ type: 'attempt', attempt })} />
               <Usage agent={agent} log={state.log} now={now.toISOString()} />
             </>
@@ -147,13 +170,22 @@ export function App() {
               onAnswer={(requestId, approve) => dispatch({ type: 'answer', requestId, approve, now: new Date().toISOString() })}
             />
           )}
-          {tab === 'activity' && <Activity log={state.log} agents={state.agents} onlyAgentId={null} />}
+          {tab === 'replay' && (
+            <Replay
+              agents={state.agents}
+              onEditBrief={(agentId) => {
+                dispatch({ type: 'select', agentId });
+                setTab('brief');
+              }}
+            />
+          )}
+          {tab === 'activity' && <Activity log={state.log} agents={state.agents} />}
         </>
       )}
 
       <footer className="muted">
-        Prototype. Everything is stored in this browser only and nothing is sent to Ziki. See the README for the
-        optional webhook receiver.
+        Prototype. The snapshot and the replay use real data read from ziki.dev on 28 Oct 2026; everything marked Demo
+        is made up to show the flow. Nothing is sent to Ziki, and changes are stored in this browser only.
       </footer>
     </div>
   );

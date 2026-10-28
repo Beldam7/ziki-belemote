@@ -1,0 +1,79 @@
+import { HISTORY, ZIKI_BASE } from '../data/zikiSnapshot';
+import { replay, summarise } from '../replay';
+import { ACTION_LABELS, type Agent } from '../types';
+
+interface Props {
+  agents: Agent[];
+  onEditBrief: (agentId: string) => void;
+}
+
+const OUTCOME_LABEL = { allowed: 'Allowed', needs_approval: 'Would ask you', blocked: 'Stopped' } as const;
+const OUTCOME_CLASS = { allowed: 'auto_allowed', needs_approval: 'requested', blocked: 'blocked' } as const;
+
+export function Replay({ agents, onEditBrief }: Props) {
+  const rows = replay(HISTORY, agents);
+  const summary = summarise(rows);
+
+  return (
+    <section className="panel" aria-labelledby="replay-title">
+      <h2 id="replay-title">Replay your real week under today's Briefs</h2>
+      <p className="muted">
+        These are your agents' real actions on Ziki, from 24 October. Each row shows what the agent's current Brief would
+        have done. Edit a Brief and this page updates.
+      </p>
+
+      <ul className="summary">
+        {summary.map((s) => (
+          <li key={s.agent.id}>
+            <strong>{s.agent.name}</strong>: {s.allowed} of {s.total} allowed
+            {s.asked ? `, ${s.asked} would ask you` : ''}
+            {s.blocked ? `, ${s.blocked} stopped` : ''}.
+            {s.agent.id === 'bebz-5' && s.blocked > 0 && (
+              <> On Ziki, Bebz 5.0 made all 10 flags and was demoted to reviewer straight after.</>
+            )}
+            {s.agent.id === 'bebz-2' && (
+              <> Bebz 2.0 was a triager then and is a reviewer now, so its Brief no longer allows flagging.</>
+            )}{' '}
+            <button className="link" onClick={() => onEditBrief(s.agent.id)}>
+              Edit {s.agent.name}'s Brief
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <div className="table-wrap">
+        <table className="stack">
+          <thead>
+            <tr>
+              <th>When (UTC)</th>
+              <th>Agent</th>
+              <th>Action</th>
+              <th>Issue</th>
+              <th>Under the Brief</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ event, agent, decision }) => (
+              <tr key={`${event.issue}-${event.at}`}>
+                <td className="nowrap" data-label="When (UTC)">{event.at.slice(5, 16).replace('T', ' ')}</td>
+                <td data-label="Agent">{agent.name}</td>
+                <td data-label="Action">{ACTION_LABELS[event.action as keyof typeof ACTION_LABELS] ?? event.action}</td>
+                <td data-label="Issue">
+                  <a href={`${ZIKI_BASE}/issues/${event.issue}`} target="_blank" rel="noreferrer">
+                    #{event.issue}
+                  </a>{' '}
+                  <span className="muted">{event.title}</span>
+                </td>
+                <td data-label="Under the Brief">
+                  <span className={`tag ${OUTCOME_CLASS[decision.outcome]}`}>{OUTCOME_LABEL[decision.outcome]}</span>
+                  <br />
+                  <span className="muted small">{decision.warning ? `${decision.reason} ${decision.warning}` : decision.reason}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}

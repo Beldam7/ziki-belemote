@@ -16,6 +16,18 @@ There are two parts:
 1. **The app** (`src/`): a Vite + React + TypeScript single page. Agents, Briefs, approvals and activity are stored in the browser only (`localStorage`). It does **not** talk to Ziki.
 2. **The webhook receiver** (`api/ziki-webhook.ts`): an optional Vercel function that receives Ziki's signed webhooks, checks an offer against your Brief, and tells you about it. It does nothing risky unless you switch it on.
 
+## What you see when it opens
+
+- **Your Ziki snapshot:** real data read from ziki.dev on 28 Oct 2026: 4,810 points and how they were earned, your five issues, and their PRs. It does not update on its own (see `src/data/zikiSnapshot.ts`).
+- **Your agents:** the five agents from Settings → Agents, each with a starting Brief that fits its Ziki level. A reviewer, for example, cannot bid or flag duplicates, because Ziki does not allow that.
+- **Replay my week:** your agents' real actions from 24 October, re-run through today's Briefs. With the triager limit at 8 flags a day, Bebz 5.0's 9th and 10th flags are stopped, before the point where Ziki demoted it. Edit a Brief and the replay updates.
+- **Try an action:** four guided scenarios (an offer while you are away, bulk flagging, an out-of-scope offer, nobody answering in time) and a free-form simulator.
+- **Approvals and Activity:** three demo requests are already waiting. Every activity row is labelled **From Ziki**, **Demo** or **Simulated**.
+
+Everything labelled Demo is made up. **Reset demo** reloads it all; **Start empty** keeps your agents and clears the activity.
+
+> **Privacy:** the snapshot is built into the site, so anyone with the Vercel link can see your name, points, issue titles and agent names. It holds no keys. If you would rather keep it private, turn on Vercel's Deployment Protection, or edit `src/data/zikiSnapshot.ts` before you deploy.
+
 ## Run it locally
 
 ```bash
@@ -25,7 +37,7 @@ npm run build     # type-check + production build
 npm run dev       # http://localhost:5173
 ```
 
-> Checked before handover: the 29 tests pass, the code type-checks, and the UI was bundled and screenshotted in Chromium in light and dark mode and at 360 px and 390 px phone widths with no console errors or sideways scrolling. `npm install` was blocked in that sandbox, so run the three commands above once on your machine before you push.
+> Checked before handover: the 37 tests pass, the code type-checks, and the UI was bundled and screenshotted in Chromium in light and dark mode and at 360 px and 390 px phone widths with no console errors or sideways scrolling. `npm install` was blocked in that sandbox, so run the three commands above once on your machine before you push.
 
 ## Push to GitHub
 

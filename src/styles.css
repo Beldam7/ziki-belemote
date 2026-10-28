@@ -356,7 +356,7 @@ tr.selected td {
 
 .log li {
   display: grid;
-  grid-template-columns: 100px 120px 1fr;
+  grid-template-columns: 70px 110px 1fr;
   gap: 12px;
   padding: 8px 0;
   border-bottom: 1px solid var(--line);
@@ -411,5 +411,145 @@ tr.selected td {
   .log li {
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+a {
+  color: var(--accent);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin: 12px 0 16px;
+}
+
+.stat {
+  display: grid;
+  gap: 2px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg);
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.clip {
+  color: var(--muted);
+}
+
+.summary {
+  margin: 12px 0 16px;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+button.scenario {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  border-radius: 14px;
+  padding: 14px 16px;
+  min-height: 0;
+  font-weight: 400;
+  background: var(--bg);
+}
+
+button.scenario:hover {
+  border-color: var(--accent);
+}
+
+.tags {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+
+tr.unavailable td {
+  color: var(--muted);
+}
+
+.tag.history,
+.tag.source-ziki {
+  color: var(--accent);
+  background: var(--tint);
+  border-color: transparent;
+}
+
+.tag.source-demo {
+  color: var(--warn);
+  background: var(--warn-bg);
+  border-color: transparent;
+}
+
+.tag.source-you {
+  color: var(--text2);
+}
+
+.tag.status-resolved {
+  color: var(--ok);
+  background: var(--ok-bg);
+  border-color: transparent;
+}
+
+.tag.status-in_progress {
+  color: var(--ask);
+  background: var(--ask-bg);
+  border-color: transparent;
+}
+
+/* On phones, these tables become one small card per row. */
+@media (max-width: 640px) {
+  table.stack thead {
+    display: none;
+  }
+
+  table.stack,
+  table.stack tbody,
+  table.stack tr,
+  table.stack td {
+    display: block;
+    width: 100%;
+  }
+
+  table.stack tr {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--divider);
+  }
+
+  table.stack td {
+    border: 0;
+    padding: 3px 0;
+  }
+
+  table.stack td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--head);
   }
 }

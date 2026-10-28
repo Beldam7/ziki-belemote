@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { levelAllows } from '../engine';
 import {
   ACTIONS,
   ACTION_LABELS,
@@ -111,13 +112,18 @@ export function BriefEditor({ agent, onSave }: Props) {
           <tbody>
             {ACTIONS.map((a) => {
               const rule = draft.rules[a];
+              const possible = levelAllows(agent.level, a);
               return (
-                <tr key={a}>
-                  <td>{ACTION_LABELS[a]}</td>
+                <tr key={a} className={possible ? '' : 'unavailable'}>
+                  <td>
+                    {ACTION_LABELS[a]}
+                    {!possible && <span className="muted small"> · not available to a {agent.level} on Ziki</span>}
+                  </td>
                   <td>
                     <select
                       aria-label={`Rule for ${ACTION_LABELS[a]}`}
-                      value={rule.mode}
+                      disabled={!possible}
+                      value={possible ? rule.mode : 'never'}
                       onChange={(e) => setRule(a, { mode: e.target.value as Mode })}
                     >
                       <option value="allow">Allow</option>
@@ -131,6 +137,7 @@ export function BriefEditor({ agent, onSave }: Props) {
                       min={0}
                       placeholder="No limit"
                       aria-label={`Daily limit for ${ACTION_LABELS[a]}`}
+                      disabled={!possible}
                       value={rule.dailyLimit ?? ''}
                       onChange={(e) => setRule(a, { dailyLimit: e.target.value === '' ? null : Math.max(0, Number(e.target.value)) })}
                     />

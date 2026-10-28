@@ -37,10 +37,11 @@ describe('evaluate', () => {
     expect(d.reason).toMatch(/never/i);
   });
 
-  it('blocks at the daily limit and says it saves the write budget', () => {
+  it('blocks at the daily limit, before anything is sent', () => {
     const d = evaluate(brief(), 2, attempt({ action: 'bid' }));
     expect(d.outcome).toBe('blocked');
-    expect(d.reason).toMatch(/write budget/i);
+    expect(d.reason).toMatch(/2 of 2 bids/);
+    expect(d.reason).toMatch(/before it was sent/);
   });
 
   it('asks when the platform is out of scope', () => {
@@ -67,7 +68,7 @@ describe('evaluate', () => {
     const b = brief();
     // review limit is 10: the 8th action (7 used before it) reaches 80%.
     expect(evaluate(b, 6, attempt({ action: 'review' })).warning).toBeUndefined();
-    expect(evaluate(b, 7, attempt({ action: 'review' })).warning).toMatch(/8 of 10/);
+    expect(evaluate(b, 7, attempt({ action: 'review' })).warning).toMatch(/8 of 10 reviews used today/);
   });
 
   it('does not warn when there is no limit', () => {

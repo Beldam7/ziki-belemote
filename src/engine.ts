@@ -1,8 +1,10 @@
 import {
   ACTIONS,
   ACTION_LABELS,
+  ACTION_NOUNS,
   SEVERITIES,
   type ActionKind,
+  type Agent,
   type ApprovalRequest,
   type Attempt,
   type Brief,
@@ -12,6 +14,20 @@ import {
 } from './types';
 
 export const WARN_AT = 0.8;
+
+/**
+ * What each Ziki level can do (Settings → Agents → Levels). A Brief can narrow
+ * these, never widen them.
+ */
+export const LEVEL_ACTIONS: Record<Agent['level'], readonly ActionKind[]> = {
+  contributor: ['bid', 'accept_offer', 'report', 'comment'],
+  triager: ['flag_duplicate', 'comment'],
+  reviewer: ['review', 'comment'],
+};
+
+export function levelAllows(level: Agent['level'], action: ActionKind): boolean {
+  return LEVEL_ACTIONS[level].includes(action);
+}
 
 export function severityRank(s: Severity): number {
   return SEVERITIES.indexOf(s);
@@ -36,6 +52,39 @@ export function defaultBrief(now: Date = new Date()): Brief {
     handoffTo: '',
     updatedAt: now.toISOString(),
   };
+}
+
+/** A starting Brief that fits what each Ziki level is for. */
+export function briefForLevel(level: Agent['level'], now: Date = new Date()): Brief {
+  const base = defaultBrief(now);
+  const never = { mode: 'never' as const, dailyLimit: null };
+  const rules = Object.fromEntries(
+    ACTIONS.map((a) => [a, levelAllows(level, a) ? base.rules[a] : never]),
+  ) as Brief['rules'];
+
+  if (level === 'triager') {
+    return {
+      ...base,
+      platforms: ['Desktop', 'Web', 'Mobile'],
+      issueTypes: ['Fix', 'Feat', 'Design', 'Marketing'],
+      maxSeverity: 'critical',
+      // Stop below the point where Ziki has demoted triagers before (about 10 flags).
+      rules: { ...rules, flag_duplicate: { mode: 'allow', dailyLimit: 8 } },
+      onTimeout: 'wait',
+    };
+  }
+  if (level === 'reviewer') {
+    return {
+      ...base,
+      platforms: ['Desktop', 'Web', 'Mobile'],
+      issueTypes: ['Fix', 'Feat', 'Design', 'Marketing'],
+      maxSeverity: 'high',
+      rules,
+      onTimeout: 'handoff',
+      handoffTo: 'Team lead',
+    };
+  }
+  return { ...base, rules };
 }
 
 /** Day key used for daily limits (UTC date). */
@@ -64,12 +113,21 @@ export function usageSummary(brief: Brief, log: LogEntry[], agentId: string, now
   });
 }
 
-export function evaluate(brief: Brief, used: number, attempt: Attempt, paused = false): Decision {
+export function evaluate(
+  brief: Brief,
+  used: number,
+  attempt: Attempt,
+  paused = false,
+  level?: Agent['level'],
+): Decision {
   const rule = brief.rules[attempt.action];
   const label = ACTION_LABELS[attempt.action].toLowerCase();
 
   if (paused) {
     return { outcome: 'blocked', reason: 'The owner paused this agent.' };
+  }
+  if (level && !levelAllows(level, attempt.action)) {
+    return { outcome: 'blocked', reason: `Ziki does not let a ${level} ${label}.` };
   }
   if (rule.mode === 'never') {
     return { outcome: 'blocked', reason: `The Brief says never to ${label}.` };
@@ -77,7 +135,7 @@ export function evaluate(brief: Brief, used: number, attempt: Attempt, paused = 
   if (rule.dailyLimit !== null && used >= rule.dailyLimit) {
     return {
       outcome: 'blocked',
-      reason: `Daily limit reached (${used} of ${rule.dailyLimit}). Stopped here, so it does not spend the platform write budget.`,
+      reason: `Daily limit reached (${used} of ${rule.dailyLimit} ${ACTION_NOUNS[attempt.action]}). Stopped before it was sent to Ziki.`,
     };
   }
   if (!brief.platforms.includes(attempt.platform)) {
@@ -89,7 +147,7 @@ export function evaluate(brief: Brief, used: number, attempt: Attempt, paused = 
   if (severityRank(attempt.severity) > severityRank(brief.maxSeverity)) {
     return {
       outcome: 'needs_approval',
-      reason: `${attempt.severity} severity is above the ${brief.maxSeverity} limit for acting without asking.`,
+      reason: `${attempt.severity[0].toUpperCase()}${attempt.severity.slice(1)} severity is above the ${brief.maxSeverity} limit for acting without asking.`,
     };
   }
   if (rule.mode === 'ask') {
@@ -98,7 +156,7 @@ export function evaluate(brief: Brief, used: number, attempt: Attempt, paused = 
 
   const decision: Decision = { outcome: 'allowed', reason: `Within the Brief: ${label}.` };
   if (rule.dailyLimit !== null && rule.dailyLimit > 0 && (used + 1) / rule.dailyLimit >= WARN_AT) {
-    decision.warning = `${used + 1} of ${rule.dailyLimit} ${label} actions used today.`;
+    decision.warning = `${used + 1} of ${rule.dailyLimit} ${ACTION_NOUNS[attempt.action]} used today.`;
   }
   return decision;
 }

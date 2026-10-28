@@ -1,15 +1,12 @@
 import { useEffect, useReducer } from 'react';
-import {
-  answerRequest,
-  createRequest,
-  defaultBrief,
-  evaluate,
-  resolveExpired,
-  usedToday,
-} from './engine';
-import type { Agent, Attempt, Brief, LogEntry, State } from './types';
+import { answerRequest, briefForLevel, createRequest, evaluate, resolveExpired, usedToday } from './engine';
+import { HISTORY, MY_AGENTS } from './data/zikiSnapshot';
+import { ACTION_LABELS, type Agent, type Attempt, type Brief, type LogEntry, type State } from './types';
 
-const STORAGE_KEY = 'agent-briefs:v1';
+const STORAGE_KEY = 'agent-briefs:v2';
+
+/** Pseudo agent id for things the owner did by hand on Ziki. */
+export const OWNER_ID = 'owner';
 
 export type Action =
   | { type: 'select'; agentId: string }
@@ -19,34 +16,82 @@ export type Action =
   | { type: 'attempt'; attempt: Attempt }
   | { type: 'answer'; requestId: string; approve: boolean; now: string }
   | { type: 'tick'; now: string }
-  | { type: 'reset'; now: string };
+  /** Demo only: make these open requests run out of time now. */
+  | { type: 'expire_now'; requestIds: string[]; now: string }
+  | { type: 'reset'; now: string; empty?: boolean };
 
-function seed(now: string): State {
-  const mk = (id: string, name: string, level: Agent['level'], lastSeen: string | null): Agent => ({
-    id,
-    name,
-    level,
-    paused: false,
-    brief: defaultBrief(new Date(now)),
-    lastSeen,
-  });
+function entry(id: string, at: string, agent: Agent, kind: LogEntry['kind'], note: string, attempt?: Attempt): LogEntry {
   return {
-    agents: [mk('agent-1', 'Bebz', 'contributor', now), mk('agent-2', 'Bebz 4.0', 'reviewer', null)],
-    requests: [],
-    log: [],
-    selectedAgentId: 'agent-1',
+    id,
+    at,
+    agentId: agent.id,
+    kind,
+    attempt,
+    briefVersion: agent.brief.version,
+    note,
+    source: attempt?.source,
+    issueNumber: attempt?.issueNumber,
   };
 }
 
-function entry(
-  id: string,
-  at: string,
-  agent: Agent,
-  kind: LogEntry['kind'],
-  note: string,
-  attempt?: Attempt,
-): LogEntry {
-  return { id, at, agentId: agent.id, kind, attempt, briefVersion: agent.brief.version, note };
+function historyLog(): LogEntry[] {
+  return HISTORY.map((e, i) => ({
+    id: `ziki-${i}`,
+    at: e.at,
+    agentId: e.agentId ?? OWNER_ID,
+    kind: 'history' as const,
+    briefVersion: 0,
+    note: e.what,
+    source: 'ziki' as const,
+    points: e.points,
+    issueNumber: e.issue,
+    title: e.title,
+    actionLabel:
+      e.action === 'resolve' ? 'resolved the issue' : e.action === 'link_pr' ? 'linked a PR' : ACTION_LABELS[e.action].toLowerCase(),
+    attempt:
+      e.action === 'resolve' || e.action === 'link_pr' || !e.platform || !e.issueType
+        ? undefined
+        : {
+            id: `ziki-${i}`,
+            agentId: e.agentId ?? OWNER_ID,
+            action: e.action,
+            platform: e.platform,
+            issueType: e.issueType,
+            severity: e.severity,
+            title: e.title,
+            at: e.at,
+            source: 'ziki' as const,
+            issueNumber: e.issue,
+          },
+  })).reverse();
+}
+
+/** Scripted, clearly labelled demo actions, a few minutes apart, ending just before `now`. */
+function demoAttempts(now: Date): Attempt[] {
+  const at = (minsAgo: number) => new Date(now.getTime() - minsAgo * 60_000).toISOString();
+  const demo = (id: string, minsAgo: number, a: Omit<Attempt, 'id' | 'at' | 'source'>): Attempt => ({ id: `demo-${id}`, at: at(minsAgo), source: 'demo', ...a });
+  return [
+    demo('r1', 95, { agentId: 'bebz-4', action: 'review', platform: 'Desktop', issueType: 'Fix', severity: 'medium', title: 'Demo: Settings tab order skips the Save button' }),
+    demo('r2', 80, { agentId: 'bebz-3', action: 'review', platform: 'Web', issueType: 'Fix', severity: 'low', title: 'Demo: Tooltip text is cut off on narrow screens' }),
+    demo('c1', 70, { agentId: 'bebz', action: 'comment', platform: 'Desktop', issueType: 'Fix', severity: 'medium', title: 'Demo: Asked the reporter for the Windows build log' }),
+    demo('f1', 60, { agentId: 'bebz-5', action: 'flag_duplicate', platform: 'Web', issueType: 'Fix', severity: 'medium', title: 'Demo: Login button overlaps the menu at 375 px' }),
+    demo('b1', 45, { agentId: 'bebz', action: 'bid', platform: 'Desktop', issueType: 'Fix', severity: 'medium', title: 'Demo: Emoji picker stays open after sending' }),
+    // The Brief stops this one outright: reviewers cannot bid on Ziki.
+    demo('x1', 25, { agentId: 'bebz-4', action: 'bid', platform: 'Desktop', issueType: 'Fix', severity: 'low', title: 'Demo: Reviewer tries to bid on a fix' }),
+    // These three need the owner, so they wait in Approvals (recent, so they have time left).
+    demo('o1', 12, { agentId: 'bebz', action: 'accept_offer', platform: 'Mobile', issueType: 'Fix', severity: 'medium', title: 'Demo: Reactions overlap the keyboard in DMs' }),
+    demo('b2', 8, { agentId: 'bebz', action: 'bid', platform: 'Desktop', issueType: 'Fix', severity: 'high', title: 'Demo: App crashes when a workspace has no channels' }),
+    demo('r3', 4, { agentId: 'bebz-4', action: 'review', platform: 'Web', issueType: 'Fix', severity: 'critical', title: 'Demo: Session token visible in the page source' }),
+  ];
+}
+
+export function seed(now: string, empty = false): State {
+  const t = new Date(now);
+  const agents: Agent[] = MY_AGENTS.map((a) => ({ ...a, paused: false, brief: briefForLevel(a.level, t) }));
+  const base: State = { agents, requests: [], log: empty ? [] : historyLog(), selectedAgentId: 'bebz' };
+  if (empty) return base;
+  // Run the demo through the real reducer so it follows exactly the same rules.
+  return demoAttempts(t).reduce((s, attempt) => reducer(s, { type: 'attempt', attempt }), base);
 }
 
 export function reducer(state: State, action: Action): State {
@@ -60,7 +105,7 @@ export function reducer(state: State, action: Action): State {
         name: action.name.trim() || 'Unnamed agent',
         level: action.level,
         paused: false,
-        brief: defaultBrief(new Date(action.now)),
+        brief: briefForLevel(action.level, new Date(action.now)),
         lastSeen: null,
       };
       return { ...state, agents: [...state.agents, agent], selectedAgentId: agent.id };
@@ -70,9 +115,7 @@ export function reducer(state: State, action: Action): State {
       return {
         ...state,
         agents: state.agents.map((a) =>
-          a.id === action.agentId
-            ? { ...a, brief: { ...action.brief, version: a.brief.version + 1, updatedAt: action.now } }
-            : a,
+          a.id === action.agentId ? { ...a, brief: { ...action.brief, version: a.brief.version + 1, updatedAt: action.now } } : a,
         ),
       };
 
@@ -95,7 +138,7 @@ export function reducer(state: State, action: Action): State {
       const agent = state.agents.find((a) => a.id === attempt.agentId);
       if (!agent) return state;
       const used = usedToday(state.log, agent.id, attempt.action, attempt.at);
-      const decision = evaluate(agent.brief, used, attempt, agent.paused);
+      const decision = evaluate(agent.brief, used, attempt, agent.paused, agent.level);
       const agents = state.agents.map((a) => (a.id === agent.id ? { ...a, lastSeen: attempt.at } : a));
 
       if (decision.outcome === 'allowed') {
@@ -138,6 +181,14 @@ export function reducer(state: State, action: Action): State {
       };
     }
 
+    case 'expire_now':
+      return {
+        ...state,
+        requests: state.requests.map((r) =>
+          action.requestIds.includes(r.id) && r.status === 'pending' ? { ...r, expiresAt: action.now } : r,
+        ),
+      };
+
     case 'tick': {
       const now = new Date(action.now);
       let requests = state.requests;
@@ -166,7 +217,7 @@ export function reducer(state: State, action: Action): State {
     }
 
     case 'reset':
-      return seed(action.now);
+      return seed(action.now, action.empty);
   }
 }
 

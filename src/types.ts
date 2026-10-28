@@ -19,6 +19,16 @@ export const ACTION_LABELS: Record<ActionKind, string> = {
   comment: 'Post a comment',
 };
 
+/** Plural nouns for counts, e.g. "7 of 8 duplicate flags". */
+export const ACTION_NOUNS: Record<ActionKind, string> = {
+  bid: 'bids',
+  accept_offer: 'accepted offers',
+  review: 'reviews',
+  flag_duplicate: 'duplicate flags',
+  report: 'reports',
+  comment: 'comments',
+};
+
 export type Mode = 'allow' | 'ask' | 'never';
 export type OnTimeout = 'skip' | 'wait' | 'handoff';
 
@@ -59,7 +69,13 @@ export interface Attempt {
   severity: Severity;
   title: string;
   at: string;
+  /** Where the action came from: real Ziki history, scripted demo data, or the simulator. */
+  source?: Source;
+  /** Ziki issue number, when the action is about a real issue. */
+  issueNumber?: number;
 }
+
+export type Source = 'ziki' | 'demo' | 'you';
 
 export type Outcome = 'allowed' | 'needs_approval' | 'blocked';
 
@@ -84,7 +100,17 @@ export interface ApprovalRequest {
   resolvedAt?: string;
 }
 
-export type LogKind = 'auto_allowed' | 'approved' | 'denied' | 'blocked' | 'skipped' | 'handed_off' | 'requested' | 'paused';
+export type LogKind =
+  | 'auto_allowed'
+  | 'approved'
+  | 'denied'
+  | 'blocked'
+  | 'skipped'
+  | 'handed_off'
+  | 'requested'
+  | 'paused'
+  /** A real event from Ziki, from before any Brief existed. */
+  | 'history';
 
 export interface LogEntry {
   id: string;
@@ -94,6 +120,12 @@ export interface LogEntry {
   attempt?: Attempt;
   briefVersion: number;
   note: string;
+  source?: Source;
+  points?: number;
+  issueNumber?: number;
+  /** For real Ziki events that have no full attempt (missing platform or type, or a manual step). */
+  title?: string;
+  actionLabel?: string;
 }
 
 export interface State {

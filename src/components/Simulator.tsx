@@ -48,6 +48,7 @@ export function Simulator({ agent, lastEntry, onAttempt }: Props) {
       severity,
       title: title.trim() || 'Untitled issue',
       at: new Date().toISOString(),
+      source: 'you',
       ...partial,
     });
   };
@@ -146,5 +147,7 @@ export function labelFor(kind: LogEntry['kind']): string {
       return 'Needs your yes';
     case 'paused':
       return 'Pause';
+    case 'history':
+      return 'On Ziki';
   }
 }

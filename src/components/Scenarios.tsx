@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { Action } from '../store';
 import type { Attempt } from '../types';
+import { Icon } from './ui';
 
 interface Props {
   dispatch: (a: Action) => void;
@@ -81,23 +82,30 @@ export function Scenarios({ dispatch, goTo }: Props) {
 
   return (
     <section className="panel" aria-labelledby="scn-title">
-      <h2 id="scn-title">Guided scenarios</h2>
-      <p className="muted">Each one plays a short scripted situation using your agents.</p>
+      <h2 id="scn-title">See a real situation play out</h2>
+      <p className="muted small">Pick one. It runs a short scripted situation with your agents and shows what the Brief changes.</p>
       <div className="scenario-grid">
         {SCENARIOS.map((s) => (
-          <button key={s.id} className="scenario" onClick={() => play(s)}>
+          <button key={s.id} className={`scenario${last?.id === s.id ? ' played' : ''}`} onClick={() => play(s)}>
             <strong>{s.title}</strong>
-            <span className="muted small">{s.today}</span>
+            <span className="muted small">
+              <span className="eyebrow-inline">Without a Brief:</span> {s.today}
+            </span>
+            <span className="scenario-go">
+              <Icon name="play" size={14} /> {last?.id === s.id ? 'Play again' : 'Play'}
+            </span>
           </button>
         ))}
       </div>
       {last && (
-        <div className="result requested" role="status">
-          <p>
-            <strong>With a Brief:</strong> {last.withBrief}
+        <div className="result tone-info" role="status">
+          <p className="result-head">
+            <Icon name="spark" size={16} />
+            <strong>With a Brief</strong>
           </p>
-          <button className="link" onClick={() => goTo(last.see)}>
-            See it in {last.see === 'approvals' ? 'Approvals' : 'Activity'}
+          <p>{last.withBrief}</p>
+          <button onClick={() => goTo(last.see)}>
+            See it in {last.see === 'approvals' ? 'Approvals' : 'Activity'} <Icon name="arrow" size={16} />
           </button>
         </div>
       )}

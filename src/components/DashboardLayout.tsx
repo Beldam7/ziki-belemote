@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { OWNER, ZIKI_BASE } from '../data/zikiSnapshot';
+import { hueFor, initials } from '../status';
 import type { Agent } from '../types';
 
 interface Props {
@@ -77,6 +78,9 @@ export function DashboardLayout({ agents, onSelectAgent, children }: Props) {
 
   return (
     <>
+      <a className="skip" href="#main-content">
+        Skip to content
+      </a>
       <header className="topnav">
         <div className="topnav-inner">
           <a className="brand" href={DASHBOARD} {...TO_ZIKI}>
@@ -112,7 +116,7 @@ export function DashboardLayout({ agents, onSelectAgent, children }: Props) {
                         setOpen(false);
                       }}
                     >
-                      <span className="chip-initials">{a.name.slice(0, 2).toUpperCase()}</span>
+                      <span className={`chip-initials agent-avatar hue-${hueFor(a.id)}`}>{initials(a.name)}</span>
                       <span className="menu-name">{a.name}</span>
                       <span className="role">{capitalise(a.level)}</span>
                     </button>

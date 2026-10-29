@@ -13,12 +13,22 @@ import {
   type Platform,
   type Severity,
 } from '../types';
+import { levelAllows } from '../engine';
+import { KIND_META } from '../status';
+import { Icon, KindPill } from './ui';
 
 interface Props {
   agent: Agent;
   lastEntry: LogEntry | undefined;
   onAttempt: (attempt: Attempt) => void;
+  onReview: () => void;
 }
+
+const NEXT_STEP: Partial<Record<LogEntry['kind'], string>> = {
+  auto_allowed: 'Nothing for you to do. It stayed inside the Brief.',
+  blocked: 'Nothing was sent. Change the Brief if you want to allow this.',
+  requested: 'It is waiting for your answer.',
+};
 
 const SAMPLE_TITLES = [
   'Close buttons have no tooltip',
@@ -29,7 +39,7 @@ const SAMPLE_TITLES = [
   'Credits balance shows stale value',
 ];
 
-export function Simulator({ agent, lastEntry, onAttempt }: Props) {
+export function Simulator({ agent, lastEntry, onAttempt, onReview }: Props) {
   const [action, setAction] = useState<ActionKind>('bid');
   const [platform, setPlatform] = useState<Platform>('Desktop');
   const [issueType, setIssueType] = useState<IssueType>('Fix');
@@ -69,10 +79,10 @@ export function Simulator({ agent, lastEntry, onAttempt }: Props) {
 
   return (
     <section className="panel" aria-labelledby="sim-title">
-      <h2 id="sim-title">Try an agent action</h2>
-      <p className="muted">
-        This is a simulator. It shows what {agent.name} would be allowed to do under its current Brief. It does not
-        contact Ziki.
+      <h2 id="sim-title">Try an action yourself</h2>
+      <p className="muted small">
+        Pretend {agent.name} is about to do something and see what its Brief decides. This is a practice run: nothing is
+        sent to Ziki.
       </p>
       <div className="grid">
         <label>
@@ -81,6 +91,7 @@ export function Simulator({ agent, lastEntry, onAttempt }: Props) {
             {ACTIONS.map((a) => (
               <option key={a} value={a}>
                 {ACTION_LABELS[a]}
+                {levelAllows(agent.level, a) ? '' : ` (not for a ${agent.level})`}
               </option>
             ))}
           </select>
@@ -116,38 +127,29 @@ export function Simulator({ agent, lastEntry, onAttempt }: Props) {
       </div>
       <div className="actions">
         <button className="primary" onClick={() => send()}>
-          Agent tries this
+          <Icon name="play" size={16} /> See what happens
         </button>
-        <button onClick={runSampleDay}>Run a sample day (14 actions)</button>
+        <button onClick={runSampleDay} title="Sends 14 mixed actions at once and logs every decision in Activity">
+          Run a sample day (14 actions)
+        </button>
       </div>
-      {lastEntry && (
-        <p className={`result ${lastEntry.kind}`} role="status">
-          <strong>{labelFor(lastEntry.kind)}:</strong> {lastEntry.note}
-        </p>
-      )}
+      <div aria-live="polite">
+        {lastEntry && (
+          <div key={lastEntry.id} className={`result tone-${KIND_META[lastEntry.kind].tone}`}>
+            <p className="result-head">
+              <KindPill kind={lastEntry.kind} />
+              <strong>{lastEntry.attempt?.title}</strong>
+            </p>
+            <p>{lastEntry.note}</p>
+            {NEXT_STEP[lastEntry.kind] && <p className="muted small">{NEXT_STEP[lastEntry.kind]}</p>}
+            {lastEntry.kind === 'requested' && (
+              <button className="primary" onClick={onReview}>
+                Review it now <Icon name="arrow" size={16} />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </section>
   );
-}
-
-export function labelFor(kind: LogEntry['kind']): string {
-  switch (kind) {
-    case 'auto_allowed':
-      return 'Allowed';
-    case 'approved':
-      return 'Approved';
-    case 'denied':
-      return 'Denied';
-    case 'blocked':
-      return 'Blocked';
-    case 'skipped':
-      return 'Skipped';
-    case 'handed_off':
-      return 'Handed off';
-    case 'requested':
-      return 'Needs your yes';
-    case 'paused':
-      return 'Pause';
-    case 'history':
-      return 'On Ziki';
-  }
 }

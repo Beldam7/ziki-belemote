@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ZIKI_BASE } from '../data/zikiSnapshot';
 import { OWNER_ID } from '../store';
 import { ACTION_LABELS, type Agent, type LogEntry, type Source } from '../types';
-import { labelFor } from './Simulator';
+import { Empty, KindPill } from './ui';
 
 interface Props {
   log: LogEntry[];
@@ -11,7 +11,13 @@ interface Props {
 
 type Filter = 'all' | Source;
 
-const SOURCE_LABEL: Record<Source, string> = { ziki: 'From Ziki', demo: '', you: 'Simulated' };
+const FILTERS: { value: Filter; label: string }[] = [
+  { value: 'all', label: 'Everything' },
+  { value: 'ziki', label: 'From Ziki' },
+  { value: 'you', label: 'Tried by you' },
+];
+
+const SOURCE_LABEL: Record<Source, string> = { ziki: 'From Ziki', demo: '', you: 'Tried by you' };
 
 export function Activity({ log, agents }: Props) {
   const [filter, setFilter] = useState<Filter>('all');
@@ -23,58 +29,63 @@ export function Activity({ log, agents }: Props) {
       <header className="panel-head">
         <div>
           <h2 id="act-title">Activity</h2>
-          <p className="muted">
-            Each row says where it came from and which Brief version it ran under. Real Ziki events happened before any
-            Brief existed.
+          <p className="muted small">
+            Everything your agents tried, what their Brief decided, and why. Real Ziki events happened before any Brief
+            existed.
           </p>
         </div>
-        <label>
-          <span className="label">Show</span>
-          <select value={filter} onChange={(e) => setFilter(e.target.value as Filter)}>
-            <option value="all">Everything</option>
-            <option value="ziki">From Ziki only</option>
-            <option value="you">Simulated by you</option>
-          </select>
-        </label>
+        <div className="filter" role="group" aria-label="Show">
+          {FILTERS.map((f) => (
+            <button key={f.value} className="filter-chip" aria-pressed={filter === f.value} onClick={() => setFilter(f.value)}>
+              {f.label}
+            </button>
+          ))}
+        </div>
       </header>
-      {rows.length === 0 && <p className="muted">Nothing here yet.</p>}
-      <ul className="log">
-        {rows.map((e) => {
-          const source = e.source ?? 'you';
-          const date = new Date(e.at);
-          return (
-            <li key={e.id}>
-              <time dateTime={e.at}>
-                {date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
-                <br />
-                <span className="muted small">{date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
-              </time>
-              <span className="tags">
-                <span className={`tag ${e.kind}`}>{labelFor(e.kind)}</span>
-                {SOURCE_LABEL[source] && <span className={`tag source-${source}`}>{SOURCE_LABEL[source]}</span>}
-              </span>
-              <span>
-                <strong>{nameOf(e.agentId)}</strong>
-                {e.attempt ? ` · ${ACTION_LABELS[e.attempt.action].toLowerCase()}` : e.actionLabel ? ` · ${e.actionLabel}` : ''}
-                {e.issueNumber ? (
-                  <>
-                    {' · '}
-                    <a href={`${ZIKI_BASE}/issues/${e.issueNumber}`} target="_blank" rel="noreferrer">
-                      #{e.issueNumber}
-                    </a>
-                  </>
-                ) : null}
-                {e.attempt ? `: ${e.attempt.title}` : e.title ? `: ${e.title}` : ''}
-                <br />
-                <span className="muted">
-                  {e.note}
-                  {e.points ? ` +${e.points} points.` : ''} {e.kind === 'history' ? '(Before Briefs)' : `(Brief v${e.briefVersion})`}
+      {rows.length === 0 ? (
+        <Empty icon="list" title="Nothing here yet">
+          <p className="muted small">
+            {filter === 'you' ? 'Actions you try on the Try it tab will appear here.' : 'Activity will appear as your agents act.'}
+          </p>
+        </Empty>
+      ) : (
+        <ul className="log">
+          {rows.map((e) => {
+            const source = e.source ?? 'you';
+            const date = new Date(e.at);
+            return (
+              <li key={e.id}>
+                <time dateTime={e.at}>
+                  {date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                  <span className="muted small">{date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
+                </time>
+                <span className="tags">
+                  <KindPill kind={e.kind} />
+                  {SOURCE_LABEL[source] && <span className={`tag source-${source}`}>{SOURCE_LABEL[source]}</span>}
                 </span>
-              </span>
-            </li>
-          );
-        })}
-      </ul>
+                <span>
+                  <strong>{nameOf(e.agentId)}</strong>
+                  {e.attempt ? ` · ${ACTION_LABELS[e.attempt.action].toLowerCase()}` : e.actionLabel ? ` · ${e.actionLabel}` : ''}
+                  {e.issueNumber ? (
+                    <>
+                      {' · '}
+                      <a href={`${ZIKI_BASE}/issues/${e.issueNumber}`} target="_blank" rel="noreferrer">
+                        #{e.issueNumber}
+                      </a>
+                    </>
+                  ) : null}
+                  {e.attempt ? `: ${e.attempt.title}` : e.title ? `: ${e.title}` : ''}
+                  <br />
+                  <span className="muted small">
+                    {e.note}
+                    {e.points ? ` +${e.points} points.` : ''} {e.kind === 'history' ? '(Before Briefs)' : `(Brief v${e.briefVersion})`}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }

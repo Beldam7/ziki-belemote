@@ -1,6 +1,7 @@
 import { HISTORY, OWNER, ZIKI_BASE } from '../data/zikiSnapshot';
 import { replay, summarise } from '../replay';
 import { ACTION_LABELS, type Agent } from '../types';
+import { Pill } from './ui';
 
 interface Props {
   agents: Agent[];
@@ -8,7 +9,7 @@ interface Props {
 }
 
 const OUTCOME_LABEL = { allowed: 'Allowed', needs_approval: 'Would ask you', blocked: 'Stopped' } as const;
-const OUTCOME_CLASS = { allowed: 'auto_allowed', needs_approval: 'requested', blocked: 'blocked' } as const;
+const OUTCOME_TONE = { allowed: 'ok', needs_approval: 'warn', blocked: 'bad' } as const;
 
 export function Replay({ agents, onEditBrief }: Props) {
   const rows = replay(HISTORY, agents);
@@ -20,11 +21,11 @@ export function Replay({ agents, onEditBrief }: Props) {
   return (
     <section className="panel" aria-labelledby="replay-title">
       <h2 id="replay-title">Replay your real week under today's Briefs</h2>
-      <p className="muted">
+      <p className="muted small">
         These are your agents' real actions on Ziki, from 24 October. Each row shows what the agent's current Brief would
         have done. Edit a Brief and this page updates.
       </p>
-      <p>
+      <p className="callout">
         These {flags.length.toLocaleString()} duplicate flags earned {flagPoints.toLocaleString()} of your{' '}
         {OWNER.points.toLocaleString()} points.{' '}
         {stoppedCount === 0
@@ -75,7 +76,7 @@ export function Replay({ agents, onEditBrief }: Props) {
                   <span className="muted">{event.title}</span>
                 </td>
                 <td data-label="Under the Brief">
-                  <span className={`tag ${OUTCOME_CLASS[decision.outcome]}`}>{OUTCOME_LABEL[decision.outcome]}</span>
+                  <Pill tone={OUTCOME_TONE[decision.outcome]}>{OUTCOME_LABEL[decision.outcome]}</Pill>
                   <br />
                   <span className="muted small">{decision.warning ? `${decision.reason} ${decision.warning}` : decision.reason}</span>
                 </td>

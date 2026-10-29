@@ -44,7 +44,7 @@ export function Approvals({ requests, agents, now, onAnswer, onTryAction }: Prop
             return (
               <li key={r.id} className="request">
                 <div className="request-head">
-                  <Avatar id={r.attempt.agentId} name={nameOf(r.attempt.agentId)} />
+                  <Avatar id={r.attempt.agentId} mood="alert" />
                   <p>
                     <strong>{nameOf(r.attempt.agentId)}</strong> wants to {verb(r)}
                   </p>

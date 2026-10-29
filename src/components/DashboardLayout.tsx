@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { OWNER, ZIKI_BASE } from '../data/zikiSnapshot';
-import { hueFor, initials } from '../status';
 import { useTheme } from '../theme';
-import { Icon } from './ui';
+import { Avatar, Icon } from './ui';
 import type { Agent } from '../types';
 
 interface Props {
@@ -119,7 +118,7 @@ export function DashboardLayout({ agents, onSelectAgent, children }: Props) {
                         setOpen(false);
                       }}
                     >
-                      <span className={`chip-initials agent-avatar hue-${hueFor(a.id)}${a.paused ? ' dim' : ''}`}>{initials(a.name)}</span>
+                      <Avatar id={a.id} size="sm" mood={a.paused ? 'asleep' : 'calm'} />
                       <span className="menu-name">
                         {a.name}
                         {a.paused && (

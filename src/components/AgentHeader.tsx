@@ -20,7 +20,7 @@ export function AgentHeader({ agent, waiting, onPause, onResume }: Props) {
 
   return (
     <section className={`panel agent-head${agent.paused ? ' is-paused' : ''}`} aria-label={`${agent.name} at a glance`}>
-      <Avatar id={agent.id} name={agent.name} size="lg" />
+      <Avatar id={agent.id} size="lg" mood={agent.paused ? 'asleep' : waiting > 0 ? 'alert' : 'calm'} />
       <div className="agent-head-text">
         <p className="agent-head-name">
           {agent.name} <span className="role">{agent.level}</span>

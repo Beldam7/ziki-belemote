@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { KIND_META, hueFor, initials, type Tone } from '../status';
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { KIND_META, hueFor, type Tone } from '../status';
 import type { LogKind } from '../types';
 
 const PATHS = {
@@ -38,10 +38,142 @@ export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
   );
 }
 
-export function Avatar({ id, name, size }: { id: string; name: string; size?: 'sm' | 'lg' }) {
+/** What the robot is up to: calm, perked up because it needs you, or asleep because it is paused. */
+export type Mood = 'calm' | 'alert' | 'asleep';
+
+/*
+ * Six robot faces. Classes: w = white shape, f = face-colour shape, ws / s = white / face-colour line.
+ * `eyes` blink, `look` glances sideways and `tip` is the antenna light; the CSS brings them to life.
+ */
+function Face({ v }: { v: number }) {
+  switch (v) {
+    case 0: // classic: square head, ears, ball antenna
+      return (
+        <>
+          <line className="ws" x1="16" y1="9.5" x2="16" y2="6.2" />
+          <circle className="w tip" cx="16" cy="4.9" r="1.9" />
+          <rect className="w" x="4.8" y="14" width="2.4" height="6" rx="1.2" />
+          <rect className="w" x="24.8" y="14" width="2.4" height="6" rx="1.2" />
+          <rect className="w" x="7" y="9" width="18" height="15.5" rx="4.5" />
+          <g className="look">
+            <g className="eyes">
+              <rect className="f" x="11" y="14" width="3.2" height="3.6" rx="1" />
+              <rect className="f" x="17.8" y="14" width="3.2" height="3.6" rx="1" />
+            </g>
+          </g>
+          <rect className="f" x="12" y="20.2" width="8" height="1.8" rx="0.9" />
+        </>
+      );
+    case 1: // visor: dark visor band with glowing dots, speaker grille
+      return (
+        <>
+          <line className="ws" x1="16" y1="8.5" x2="16" y2="6" />
+          <circle className="w tip" cx="16" cy="4.7" r="1.6" />
+          <rect className="w" x="7" y="8.5" width="18" height="17" rx="6" />
+          <rect className="f" x="9.5" y="12.5" width="13" height="5.6" rx="2.8" />
+          <g className="look">
+            <g className="eyes">
+              <circle className="w" cx="13.6" cy="15.3" r="1.35" />
+              <circle className="w" cx="18.4" cy="15.3" r="1.35" />
+            </g>
+          </g>
+          <rect className="f" x="12" y="21" width="1.6" height="2.8" rx="0.8" />
+          <rect className="f" x="15.2" y="21" width="1.6" height="2.8" rx="0.8" />
+          <rect className="f" x="18.4" y="21" width="1.6" height="2.8" rx="0.8" />
+        </>
+      );
+    case 2: // round: circle head, big shiny eyes, smile
+      return (
+        <>
+          <line className="ws" x1="16" y1="8" x2="16" y2="5.4" />
+          <circle className="w tip" cx="16" cy="4.5" r="1.8" />
+          <circle className="w" cx="16" cy="17.2" r="9.6" />
+          <g className="look">
+            <g className="eyes">
+              <circle className="f" cx="12.4" cy="15.8" r="2.4" />
+              <circle className="f" cx="19.6" cy="15.8" r="2.4" />
+              <circle className="w" cx="13.2" cy="14.9" r="0.85" />
+              <circle className="w" cx="20.4" cy="14.9" r="0.85" />
+            </g>
+          </g>
+          <path className="s" d="M12.2 20.6q3.8 3.2 7.6 0" />
+        </>
+      );
+    case 3: // cyclops: one big eye, zig-zag mouth, two antenna prongs
+      return (
+        <>
+          <path className="ws" d="M12 9.2 10.2 6.4M20 9.2 21.8 6.4" />
+          <circle className="w tip" cx="9.8" cy="5.6" r="1.3" />
+          <circle className="w tip" cx="22.2" cy="5.6" r="1.3" />
+          <rect className="w" x="6" y="9" width="20" height="16" rx="5.2" />
+          <g className="look">
+            <g className="eyes">
+              <circle className="f" cx="16" cy="15.4" r="4.3" />
+              <circle className="w" cx="16" cy="15.4" r="1.7" />
+            </g>
+          </g>
+          <path className="s" d="M11 21.8l2.5-2 2.5 2 2.5-2 2.5 2" />
+        </>
+      );
+    case 4: // happy: smiling arcs, open smile, headphone-style ear discs
+      return (
+        <>
+          <line className="ws" x1="16" y1="9" x2="16" y2="6.4" />
+          <circle className="w tip" cx="16" cy="5" r="1.7" />
+          <circle className="w" cx="5.4" cy="16.6" r="2.7" />
+          <circle className="w" cx="26.6" cy="16.6" r="2.7" />
+          <rect className="w" x="7.6" y="9" width="16.8" height="15.8" rx="4.4" />
+          <g className="look">
+            <g className="eyes">
+              <path className="s" d="M10.8 16.2q1.8-2.9 3.6 0" />
+              <path className="s" d="M17.6 16.2q1.8-2.9 3.6 0" />
+            </g>
+          </g>
+          <path className="f" d="M12.4 20.2h7.2a3.6 3.6 0 0 1-7.2 0z" />
+        </>
+      );
+    default: // tall: LED pill eyes, dotted mouth, diamond antenna
+      return (
+        <>
+          <line className="ws" x1="16" y1="8.6" x2="16" y2="7.2" />
+          <path className="w tip" d="M16 2.4l2 2.3-2 2.3-2-2.3z" />
+          <rect className="w" x="8" y="8.4" width="16" height="17.4" rx="5.2" />
+          <g className="look">
+            <g className="eyes">
+              <rect className="f" x="11.2" y="12.6" width="3" height="6.4" rx="1.5" />
+              <rect className="f" x="17.8" y="12.6" width="3" height="6.4" rx="1.5" />
+            </g>
+          </g>
+          <circle className="f" cx="12.5" cy="22.6" r="1" />
+          <circle className="f" cx="16" cy="22.6" r="1" />
+          <circle className="f" cx="19.5" cy="22.6" r="1" />
+        </>
+      );
+  }
+}
+
+export function RobotFace({ variant, className }: { variant: number; className?: string }) {
   return (
-    <span className={`agent-avatar hue-${hueFor(id)}${size ? ` ${size}` : ''}`} aria-hidden="true">
-      {initials(name)}
+    <svg className={`robot${className ? ` ${className}` : ''}`} data-variant={variant} viewBox="0 0 32 32" aria-hidden="true">
+      <g className="bot">
+        <Face v={variant} />
+      </g>
+      <g className="zzz">
+        <path className="ws" d="M21 3.8h3.4L21 7.6h3.4" />
+        <path className="ws" d="M24.8-.4H27l-2.2 2.4H27" />
+      </g>
+    </svg>
+  );
+}
+
+/** An agent's face: its own kind of robot, in its own colour, with a mood. Decorative; the name sits beside it. */
+export function Avatar({ id, size, mood = 'calm' }: { id: string; size?: 'sm' | 'lg'; mood?: Mood }) {
+  const v = hueFor(id);
+  // Each robot blinks and glances on its own rhythm, so a list of them never moves in lockstep.
+  const rhythm = { '--t': `${4 + v * 0.6}s`, '--d': `${-v * 0.9}s` } as CSSProperties;
+  return (
+    <span className={`agent-avatar hue-${v}${size ? ` ${size}` : ''} mood-${mood}`} style={rhythm} aria-hidden="true">
+      <RobotFace variant={v} />
     </span>
   );
 }

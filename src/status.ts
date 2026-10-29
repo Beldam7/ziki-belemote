@@ -38,11 +38,6 @@ export function hueFor(id: string): number {
   return h % 6;
 }
 
-export function initials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  return (parts.length > 1 ? parts[0][0] + parts[1][0] : name.slice(0, 2)).toUpperCase();
-}
-
 export function timeAgo(iso: string | null, now: Date): string {
   if (!iso) return 'Not seen yet';
   const mins = Math.round((now.getTime() - new Date(iso).getTime()) / 60_000);

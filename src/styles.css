@@ -1665,18 +1665,6 @@ button.menu-agent:hover,
   background: var(--chip);
 }
 
-.chip-initials {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--tint);
-  color: var(--accent);
-  font-size: 11px;
-  font-weight: 700;
-}
-
 .menu-name {
   flex: 1;
 }
@@ -1988,10 +1976,6 @@ button.primary:active {
 .agent-avatar.hue-4 { background: linear-gradient(135deg, var(--h4), #1d4ed8); }
 .agent-avatar.hue-5 { background: linear-gradient(135deg, var(--h5), #047857); }
 
-.chip-initials.agent-avatar {
-  box-shadow: none;
-}
-
 button.agent-item.selected {
   background: linear-gradient(135deg, var(--accent-soft), color-mix(in srgb, var(--accent-soft) 40%, var(--panel)));
   box-shadow: var(--shadow-sm);
@@ -2272,10 +2256,6 @@ button.agent-item.selected {
 
 .agent-avatar {
   box-shadow: 0 0 0 3px var(--ring), 0 8px 14px -8px rgb(29 24 48 / 0.5);
-}
-
-.chip-initials.agent-avatar {
-  box-shadow: none;
 }
 
 /* ---------- Hero bubbles and tiles ---------- */
@@ -2768,13 +2748,230 @@ button.agent-item.paused .agent-name {
   color: var(--muted);
 }
 
-.chip-initials.agent-avatar.dim {
-  filter: grayscale(0.8);
-  opacity: 0.7;
-}
-
 /* ---------- Inline confirmation under the footer links ---------- */
 
 .page-foot .confirm-inline {
   margin-top: 4px;
+}
+
+/* =====================================================================
+   Robot avatars: a face colour per agent, then idle life and moods.
+   ===================================================================== */
+
+.agent-avatar.hue-0 { --face: #6d28d9; }
+.agent-avatar.hue-1 { --face: #be185d; }
+.agent-avatar.hue-2 { --face: #0f766e; }
+.agent-avatar.hue-3 { --face: #b45309; }
+.agent-avatar.hue-4 { --face: #1d4ed8; }
+.agent-avatar.hue-5 { --face: #047857; }
+
+.agent-avatar.sm {
+  width: 28px;
+  height: 28px;
+  box-shadow: none;
+}
+
+.agent-avatar svg.robot {
+  width: 80%;
+  height: 80%;
+  overflow: visible;
+}
+
+.robot .w { fill: rgb(255 255 255 / 0.97); }
+.robot .f { fill: var(--face); }
+
+.robot .ws,
+.robot .s {
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.robot .ws { stroke: rgb(255 255 255 / 0.97); }
+.robot .s { stroke: var(--face); }
+.robot .zzz .ws { stroke-width: 1.3; }
+
+.robot .zzz {
+  display: none;
+}
+
+/* ---------- Idle life: bob, blink, glance ---------- */
+
+.robot .bot,
+.robot .look,
+.robot .eyes,
+.robot .tip,
+.robot .zzz path {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+
+.robot .bot {
+  transform-origin: 50% 100%;
+}
+
+.agent-avatar svg.robot {
+  animation: bob calc(var(--t, 4s) * 0.8) ease-in-out infinite alternate;
+  animation-delay: var(--d, 0s);
+}
+
+.robot .eyes {
+  animation: blink var(--t, 4s) infinite;
+  animation-delay: var(--d, 0s);
+}
+
+.robot .look {
+  animation: glance calc(var(--t, 4s) * 1.7) ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+
+@keyframes bob {
+  to {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes blink {
+  0%,
+  90%,
+  100% {
+    transform: scaleY(1);
+  }
+  94% {
+    transform: scaleY(0.08);
+  }
+}
+
+@keyframes glance {
+  0%,
+  35%,
+  100% {
+    transform: translateX(0);
+  }
+  45%,
+  60% {
+    transform: translateX(1.3px);
+  }
+  70%,
+  85% {
+    transform: translateX(-1.3px);
+  }
+}
+
+/* Say hello when you point at a robot's row, header or request. */
+button.agent-item:hover .robot .bot,
+.menu-agent:hover .robot .bot,
+.agent-head .agent-avatar:hover .robot .bot,
+.request:hover .robot .bot {
+  animation: wave 0.7s ease-in-out;
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-9deg);
+  }
+  60% {
+    transform: rotate(8deg);
+  }
+}
+
+/* ---------- Perked up: something is waiting for you ---------- */
+
+.mood-alert .robot .tip {
+  fill: var(--warn-bar);
+  animation: tip-pulse 1.3s ease-in-out infinite;
+}
+
+.mood-alert .robot .bot {
+  animation: hop 2.6s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+
+@keyframes tip-pulse {
+  50% {
+    transform: scale(1.55);
+    opacity: 0.75;
+  }
+}
+
+@keyframes hop {
+  0%,
+  84%,
+  100% {
+    transform: translateY(0);
+  }
+  91% {
+    transform: translateY(-1.8px);
+  }
+}
+
+/* ---------- Asleep: paused ---------- */
+
+.mood-asleep svg.robot,
+.mood-asleep .robot .look {
+  animation: none;
+}
+
+.mood-asleep .robot .eyes {
+  animation: none;
+  transform: scaleY(0.1);
+}
+
+.mood-asleep .robot .tip {
+  opacity: 0.55;
+}
+
+.mood-asleep .robot .bot {
+  transform: rotate(-4deg);
+  animation: breathe 3.6s ease-in-out infinite alternate;
+}
+
+.mood-asleep .robot .zzz {
+  display: inline;
+}
+
+.mood-asleep .robot .zzz path {
+  animation: float-z 3s ease-in-out infinite;
+}
+
+.mood-asleep .robot .zzz path:nth-child(2) {
+  animation-delay: -1.5s;
+}
+
+@keyframes breathe {
+  to {
+    transform: rotate(-4deg) scale(1.035);
+  }
+}
+
+@keyframes float-z {
+  0% {
+    opacity: 0;
+    transform: translate(0, 2px);
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(1.6px, -3px);
+  }
+}
+
+/* A sleeping robot still reads as a robot: keep it softer, not grey. */
+button.agent-item.paused .agent-avatar,
+.agent-head.is-paused .agent-avatar {
+  filter: grayscale(0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .robot,
+  .robot * {
+    animation: none !important;
+  }
 }

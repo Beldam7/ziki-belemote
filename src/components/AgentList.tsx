@@ -34,7 +34,7 @@ export function AgentList({ agents, selectedId, pendingByAgent, now, onSelect, o
                 aria-current={a.id === selectedId ? 'true' : undefined}
                 onClick={() => onSelect(a.id)}
               >
-                <Avatar id={a.id} name={a.name} />
+                <Avatar id={a.id} mood={a.paused ? 'asleep' : pending > 0 ? 'alert' : 'calm'} />
                 <span className="agent-main">
                   <span className="agent-name">{a.name}</span>
                   <span className="agent-meta">

@@ -25,7 +25,7 @@ interface Props {
 }
 
 const NEXT_STEP: Partial<Record<LogEntry['kind'], string>> = {
-  auto_allowed: 'Nothing for you to do. It stayed inside the Brief.',
+  auto_allowed: 'Nothing for you to do. In a real run, this would go ahead.',
   blocked: 'Nothing was sent. Change the Brief if you want to allow this.',
   requested: 'It is waiting for your answer.',
 };

@@ -32,17 +32,18 @@ export function levelAllows(level: Agent['level'], action: ActionKind): boolean 
 /**
  * The highest daily limit a Brief may set for each action, so an agent never gets
  * close to what Ziki refuses, flags or demotes for (see https://ziki.dev/llms.txt).
+ * `why` is a clause that finishes the sentence "Up to {max} a day, ...".
  */
 export const SAFE_DAILY_LIMITS: Record<ActionKind, { max: number; why: string }> = {
-  bid: { max: 2, why: 'Ziki lets one person hold at most 2 active claims, and a bid that wins becomes a claim.' },
+  bid: { max: 2, why: 'because Ziki lets one person hold at most 2 active claims, and a bid that wins becomes a claim' },
   accept_offer: {
     max: 2,
-    why: 'Ziki lets one person hold at most 2 active claims, and 3 claims released for silence in 7 days demotes a contributor.',
+    why: 'because Ziki lets one person hold at most 2 active claims, and 3 claims released for silence in 7 days demotes a contributor',
   },
-  review: { max: 30, why: "Ziki's standard write budget is 30 per hour." },
-  flag_duplicate: { max: 8, why: 'Ziki demoted Bebz 5.0 from triager after 10 flags in one run.' },
-  report: { max: 30, why: "Ziki's standard write budget is 30 per hour." },
-  comment: { max: 30, why: "Ziki's standard write budget is 30 per hour." },
+  review: { max: 30, why: "so this action alone never goes past Ziki's standard budget of 30 writes an hour" },
+  flag_duplicate: { max: 8, why: 'because Ziki demoted Bebz 5.0 from triager after 10 flags in one run' },
+  report: { max: 30, why: "so this action alone never goes past Ziki's standard budget of 30 writes an hour" },
+  comment: { max: 30, why: "so this action alone never goes past Ziki's standard budget of 30 writes an hour" },
 };
 
 /** The limit that applies: the Brief's own, never above the safe maximum. */
@@ -147,37 +148,37 @@ export function evaluate(
   const label = ACTION_LABELS[attempt.action].toLowerCase();
 
   if (paused) {
-    return { outcome: 'blocked', reason: 'The owner paused this agent.' };
+    return { outcome: 'blocked', reason: "You've paused this agent, so it won't act until you resume it." };
   }
   if (level && !levelAllows(level, attempt.action)) {
-    return { outcome: 'blocked', reason: `Ziki does not let a ${level} ${label}.` };
+    return { outcome: 'blocked', reason: `A ${level} can't ${label} on Ziki.` };
   }
   if (rule.mode === 'never') {
-    return { outcome: 'blocked', reason: `The Brief says never to ${label}.` };
+    return { outcome: 'blocked', reason: `Its Brief says never to ${label}.` };
   }
   if (used >= limit) {
     return {
       outcome: 'blocked',
-      reason: `Daily limit reached (${used} of ${limit} ${ACTION_NOUNS[attempt.action]}). Stopped before it was sent to Ziki.`,
+      reason: `Daily limit reached: ${used} of ${limit} ${ACTION_NOUNS[attempt.action]} already today. Stopped before it was sent to Ziki.`,
     };
   }
   if (!brief.platforms.includes(attempt.platform)) {
-    return { outcome: 'needs_approval', reason: `${attempt.platform} is outside this agent's scope.` };
+    return { outcome: 'needs_approval', reason: `${attempt.platform} is outside where this agent can act on its own.` };
   }
   if (!brief.issueTypes.includes(attempt.issueType)) {
-    return { outcome: 'needs_approval', reason: `${attempt.issueType} issues are outside this agent's scope.` };
+    return { outcome: 'needs_approval', reason: `${attempt.issueType} issues are outside what this agent handles on its own.` };
   }
   if (severityRank(attempt.severity) > severityRank(brief.maxSeverity)) {
     return {
       outcome: 'needs_approval',
-      reason: `${attempt.severity[0].toUpperCase()}${attempt.severity.slice(1)} severity is above the ${brief.maxSeverity} limit for acting without asking.`,
+      reason: `${attempt.severity[0].toUpperCase()}${attempt.severity.slice(1)} severity is more serious than the ${brief.maxSeverity} it handles on its own.`,
     };
   }
   if (rule.mode === 'ask') {
-    return { outcome: 'needs_approval', reason: `The Brief says to ask before you ${label}.` };
+    return { outcome: 'needs_approval', reason: 'Its Brief says to ask you first.' };
   }
 
-  const decision: Decision = { outcome: 'allowed', reason: `Within the Brief: ${label}.` };
+  const decision: Decision = { outcome: 'allowed', reason: 'This is inside its Brief, so it can go ahead.' };
   if (limit > 0 && (used + 1) / limit >= WARN_AT) {
     decision.warning = `${used + 1} of ${limit} ${ACTION_NOUNS[attempt.action]} used today.`;
   }

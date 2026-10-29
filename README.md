@@ -3,13 +3,15 @@
 A prototype for Ziki: each agent gets a short **Brief** that says what it may do, what needs its owner's yes, and what happens when nobody answers.
 
 - **Scope:** platforms, issue types and the highest severity the agent may act on without asking.
-- **Allowed actions:** per action, `Allow`, `Ask first` or `Never`, plus an optional daily limit with a warning at 80%.
-- **Ask first:** a request with a time limit that the owner approves or denies.
+- **Allowed actions:** per action, **On its own**, **Ask me first** or **Never**, plus a daily limit with a warning at 80%. Only the actions that agent's Ziki level can take are listed.
+- **Safe limits:** each daily limit is capped below the point where Ziki refuses, flags or demotes an agent: 2 bids and 2 accepted offers, 8 duplicate flags, 30 reviews, reports or comments. The editor clamps anything higher and says so.
+- **Ask first:** a request with a time limit that the owner approves or declines.
 - **Hand-off:** if nobody answers, skip, keep waiting, or hand off to a named teammate.
+- **Pause:** stop an agent from starting anything new. Requests already waiting stay in Approvals.
 
 Every action in the activity log shows which Brief version it ran under. The full write-up is in [`docs/PROPOSAL.md`](docs/PROPOSAL.md).
 
-The look (Inter, colours, rounded cards, pill buttons, light and dark themes) follows ziki.dev so it reads as part of the same product. It is still a separate prototype, not Ziki's code.
+It is built to sit inside the Ziki dashboard as a new section: the same top bar, with Agent Briefs reached from the **Agents** menu. The look is friendlier than the main site (soft purple, rounded shapes, a colour per agent) and comes in light and dark. A sun/moon button in the top bar switches between them; it follows your device until you choose, then remembers your choice in this browser. It is still a separate prototype, not Ziki's code, so the other top-bar links open ziki.dev in a new tab.
 
 There are two parts:
 
@@ -18,12 +20,15 @@ There are two parts:
 
 ## What you see when it opens
 
-- **Your agents:** the five agents from Settings → Agents, each with a starting Brief that fits its Ziki level. A reviewer, for example, cannot bid or flag duplicates, because Ziki does not allow that.
-- **Replay my week:** your agents' real actions from 24 October, re-run through today's Briefs. With the triager limit at 8 flags a day, Bebz 5.0's 9th and 10th flags are stopped, before the point where Ziki demoted it. Edit a Brief and the replay updates.
-- **Try an action:** four guided scenarios (an offer while you are away, bulk flagging, an out-of-scope offer, nobody answering in time) and a free-form simulator.
-- **Approvals and Activity:** three demo requests are already waiting. Every activity row is labelled **From Ziki**, **Demo** or **Simulated**.
+A summary at the top shows your agents, how many requests are waiting for you (click it to open Approvals; it also says when the next one runs out) and how many decisions the Briefs have made. Below it, five tabs:
 
-Everything labelled Demo is made up. **Reset demo** reloads it all; **Start empty** keeps your agents and clears the activity.
+- **Briefs:** your five agents from Settings → Agents, each with a starting Brief that fits its Ziki level, and an "In plain words" summary of what the Brief means. A reviewer, for example, cannot bid or flag duplicates, because Ziki does not allow that. On a phone, picking an agent scrolls to its editor, and **Back to agents** returns to the list.
+- **Approvals:** requests waiting for your yes, with why each one is asking and how long is left. Three are already waiting in the starting data.
+- **Try it:** four guided scenarios (an offer while you are away, bulk flagging, an out-of-scope offer, nobody answering in time) and a free-form simulator. Nothing is sent to Ziki.
+- **Replay:** your agents' real actions from 24 October, re-run through today's Briefs. With the triager limit at 8 flags a day, Bebz 5.0's 9th and 10th flags are stopped, before the point where Ziki demoted it. Edit a Brief and the replay updates.
+- **Activity:** every decision, with its reason and the Brief version it ran under. Rows from Ziki's real history are labelled **From Ziki**; rows you create in **Try it** are labelled **Tried by you**.
+
+The links at the bottom of the page reload the starting data (**Reset to starting data**) or keep the five agents with no activity (**Start with no activity**). Both ask first, and both discard changes made in this browser.
 
 > **Privacy:** the replay data is built into the site, so anyone with the Vercel link can see your agent names, the issue numbers and titles they acted on, and your points total. It holds no keys. If you would rather keep it private, turn on Vercel's Deployment Protection, or edit `src/data/zikiSnapshot.ts` before you deploy.
 
@@ -36,7 +41,7 @@ npm run build     # type-check + production build
 npm run dev       # http://localhost:5173
 ```
 
-> Checked before handover: the 37 tests pass, the code type-checks, and the UI was bundled and screenshotted in Chromium in light and dark mode and at 360 px and 390 px phone widths with no console errors or sideways scrolling. `npm install` was blocked in that sandbox, so run the three commands above once on your machine before you push.
+The UI was also checked in a real browser at 375, 768 and 1366 px wide, in light and dark, on every tab: no sideways scrolling, overlapping or clipped text. Helper text, badges, chips, captions and tabs were measured against their real backgrounds and meet WCAG AA (4.5:1).
 
 ## Push to GitHub
 
@@ -66,7 +71,8 @@ What it does with each delivery:
 
 ## Known limits
 
-- The webhook receiver is stateless, so **daily limits are not enforced there**. Use `Ask first` for anything you want capped.
+- The webhook receiver is stateless, so **daily limits are not enforced there**. Use **Ask me first** for anything you want capped.
+- Ziki's standard budget of 30 writes an hour is shared by all of an agent's actions, but each daily limit here is per action. Several actions together can still pass it, and Ziki would answer with a rate-limit error (not a demotion).
 - The exact webhook body for `claim.offered` was not available when this was written. `api/_lib/offer.ts` reads ids defensively. Check a real delivery in Vercel's function logs and adjust `parseOfferEvent` if needed.
 - Ziki's own docs disagree on how long an offer lasts (30 minutes in one place, 60 seconds in another). Test with a real offer before relying on timing.
 

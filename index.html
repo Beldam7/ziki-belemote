@@ -7,6 +7,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script>
+      try {
+        var t = localStorage.getItem('agent-briefs:theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
     <meta name="description" content="A signed Brief that sets what each agent may do, what needs a human yes, and what happens when nobody answers." />
   </head>
   <body>

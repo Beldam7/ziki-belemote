@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SAFE_DAILY_LIMITS, effectiveLimit, levelAllows } from '../engine';
 import {
   ACTIONS,
@@ -16,7 +16,7 @@ import {
   type Platform,
   type Severity,
 } from '../types';
-import { Icon, type IconName } from './ui';
+import { Icon, Segmented, type IconName } from './ui';
 
 type Draft = Omit<Brief, 'version' | 'updatedAt'>;
 
@@ -49,11 +49,93 @@ const ACTION_ICON: Record<ActionKind, IconName> = {
   comment: 'chat',
 };
 
-const MODES: { value: Mode; label: string }[] = [
-  { value: 'allow', label: 'On its own' },
-  { value: 'ask', label: 'Ask me first' },
-  { value: 'never', label: 'Never' },
+const MODES = [
+  { value: 'allow', label: 'On its own', className: 'mode-allow' },
+  { value: 'ask', label: 'Ask me first', className: 'mode-ask' },
+  { value: 'never', label: 'Never', className: 'mode-never' },
+] satisfies { value: Mode; label: string; className: string }[];
+
+const SEVERITY_OPTIONS = SEVERITIES.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }));
+
+const TIMEOUT_OPTIONS: { value: OnTimeout; label: string }[] = [
+  { value: 'skip', label: 'Skip the action' },
+  { value: 'wait', label: 'Keep waiting for me' },
+  { value: 'handoff', label: 'Hand it to a teammate' },
 ];
+
+/**
+ * A daily-limit box that lets you type freely (even clear it to retype), clamps to the
+ * safe maximum, and says so when it had to.
+ */
+function LimitInput({
+  action,
+  value,
+  disabled,
+  hintId,
+  onChange,
+}: {
+  action: ActionKind;
+  value: number;
+  disabled: boolean;
+  hintId: string;
+  onChange: (n: number) => void;
+}) {
+  const { max } = SAFE_DAILY_LIMITS[action];
+  const [text, setText] = useState(String(value));
+  const [tooHigh, setTooHigh] = useState<number | null>(null);
+  const ref = useRef<HTMLInputElement>(null);
+
+  // Follow outside changes (like Discard) unless the person is in the middle of typing.
+  useEffect(() => {
+    if (document.activeElement !== ref.current) {
+      setText(String(value));
+      setTooHigh(null);
+    }
+  }, [value]);
+
+  return (
+    <span className="limit-wrap">
+      <label className={`limit${disabled ? ' off' : ''}`}>
+        <input
+          ref={ref}
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={max}
+          disabled={disabled}
+          aria-label={`Daily limit for ${ACTION_LABELS[action]}`}
+          aria-describedby={tooHigh !== null ? `${hintId} ${hintId}-clamp` : hintId}
+          aria-invalid={tooHigh !== null ? true : undefined}
+          value={text}
+          onChange={(e) => {
+            const raw = e.target.value;
+            setText(raw);
+            if (raw === '') return;
+            const n = Math.max(0, Math.floor(Number(raw)));
+            if (Number.isNaN(n)) return;
+            if (n > max) {
+              setTooHigh(n);
+              setText(String(max));
+              onChange(max);
+            } else {
+              setTooHigh(null);
+              onChange(n);
+            }
+          }}
+          onBlur={() => {
+            if (text === '') setText(String(value));
+          }}
+        />
+        <span className="muted small">a day</span>
+      </label>
+      {tooHigh !== null && (
+        <span id={`${hintId}-clamp`} className="field-error small" role="status">
+          {tooHigh} is above the safe limit, so it was set to {max} a day.
+        </span>
+      )}
+    </span>
+  );
+}
 
 /** The Brief in plain words, built from the same rules the engine applies. */
 function describe(draft: Draft, agent: Agent): string[] {
@@ -141,38 +223,22 @@ export function BriefEditor({ agent, onSave }: Props) {
                   </span>
                   {ACTION_LABELS[a]}
                 </span>
-                <div className="seg" role="radiogroup" aria-labelledby={`rule-${a}`}>
-                  {MODES.map((m) => (
-                    <label key={m.value} className={`seg-option mode-${m.value}`}>
-                      <input
-                        type="radio"
-                        name={`mode-${a}`}
-                        value={m.value}
-                        checked={rule.mode === m.value}
-                        onChange={() => setRule(a, { mode: m.value })}
-                      />
-                      <span>{m.label}</span>
-                    </label>
-                  ))}
-                </div>
-                <label className={`limit${rule.mode === 'never' ? ' off' : ''}`}>
-                  <input
-                    type="number"
-                    min={0}
-                    max={safe.max}
-                    disabled={rule.mode === 'never'}
-                    aria-label={`Daily limit for ${ACTION_LABELS[a]}`}
-                    aria-describedby={`max-${a}`}
-                    value={effectiveLimit(a, rule.dailyLimit)}
-                    onChange={(e) => {
-                      const n = e.target.value === '' ? safe.max : Math.floor(Number(e.target.value));
-                      setRule(a, { dailyLimit: effectiveLimit(a, Math.max(0, n)) });
-                    }}
-                  />
-                  <span className="muted small">a day</span>
-                </label>
+                <Segmented
+                  name={`mode-${a}`}
+                  labelledBy={`rule-${a}`}
+                  value={rule.mode}
+                  options={MODES}
+                  onChange={(mode) => setRule(a, { mode })}
+                />
+                <LimitInput
+                  action={a}
+                  value={effectiveLimit(a, rule.dailyLimit)}
+                  disabled={rule.mode === 'never'}
+                  hintId={`max-${a}`}
+                  onChange={(dailyLimit) => setRule(a, { dailyLimit })}
+                />
                 <span id={`max-${a}`} className="muted small rule-why">
-                  Up to {safe.max}. {safe.why}
+                  Up to {safe.max} a day, {safe.why}.
                 </span>
               </li>
             );
@@ -216,14 +282,24 @@ export function BriefEditor({ agent, onSave }: Props) {
               ))}
             </div>
           </fieldset>
-          <label>
-            <span className="label">Highest severity it handles alone</span>
-            <select value={draft.maxSeverity} onChange={(e) => setDraft((d) => ({ ...d, maxSeverity: e.target.value as Severity }))}>
-              {SEVERITIES.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
-          </label>
+          <div className="field">
+            <span className="label" id="severity-label">
+              Highest severity it handles alone
+            </span>
+            <Segmented
+              name="max-severity"
+              labelledBy="severity-label"
+              tone="accent"
+              value={draft.maxSeverity}
+              options={SEVERITY_OPTIONS}
+              onChange={(maxSeverity: Severity) => setDraft((d) => ({ ...d, maxSeverity }))}
+            />
+            <span className="muted small">
+              {draft.maxSeverity === 'critical'
+                ? 'It handles every severity on its own.'
+                : `Anything above ${draft.maxSeverity} goes to you first.`}
+            </span>
+          </div>
         </div>
         {(!draft.platforms.length || !draft.issueTypes.length) && (
           <p className="field-hint warn">
@@ -250,14 +326,20 @@ export function BriefEditor({ agent, onSave }: Props) {
               <span className="muted small">minutes</span>
             </span>
           </label>
-          <label>
-            <span className="label">If you don't answer in time</span>
-            <select value={draft.onTimeout} onChange={(e) => setDraft((d) => ({ ...d, onTimeout: e.target.value as OnTimeout }))}>
-              <option value="skip">Skip the action</option>
-              <option value="wait">Keep waiting for me</option>
-              <option value="handoff">Hand it to a teammate</option>
-            </select>
-          </label>
+          <div className="field">
+            <span className="label" id="timeout-label">
+              If you don't answer in time
+            </span>
+            <Segmented
+              name="on-timeout"
+              labelledBy="timeout-label"
+              tone="accent"
+              stack
+              value={draft.onTimeout}
+              options={TIMEOUT_OPTIONS}
+              onChange={(onTimeout) => setDraft((d) => ({ ...d, onTimeout }))}
+            />
+          </div>
           {draft.onTimeout === 'handoff' && (
             <label>
               <span className="label">Teammate</span>

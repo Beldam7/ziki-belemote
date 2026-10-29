@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { OWNER, ZIKI_BASE } from '../data/zikiSnapshot';
 import { hueFor, initials } from '../status';
+import { useTheme } from '../theme';
+import { Icon } from './ui';
 import type { Agent } from '../types';
 
 interface Props {
@@ -60,6 +62,7 @@ const icon = {
 const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function DashboardLayout({ agents, onSelectAgent, children }: Props) {
+  const { theme, toggle } = useTheme();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -116,8 +119,15 @@ export function DashboardLayout({ agents, onSelectAgent, children }: Props) {
                         setOpen(false);
                       }}
                     >
-                      <span className={`chip-initials agent-avatar hue-${hueFor(a.id)}`}>{initials(a.name)}</span>
-                      <span className="menu-name">{a.name}</span>
+                      <span className={`chip-initials agent-avatar hue-${hueFor(a.id)}${a.paused ? ' dim' : ''}`}>{initials(a.name)}</span>
+                      <span className="menu-name">
+                        {a.name}
+                        {a.paused && (
+                          <span className="menu-paused">
+                            <Icon name="pause" size={11} /> Paused
+                          </span>
+                        )}
+                      </span>
                       <span className="role">{capitalise(a.level)}</span>
                     </button>
                   ))}
@@ -147,6 +157,14 @@ export function DashboardLayout({ agents, onSelectAgent, children }: Props) {
               {OWNER.points}
               <span className="hide-sm">pts</span>
             </span>
+            <button
+              className="theme-toggle"
+              onClick={toggle}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
+            </button>
             <a className="bell" href={DASHBOARD} {...TO_ZIKI} aria-label="Notifications">
               {icon.bell}
             </a>

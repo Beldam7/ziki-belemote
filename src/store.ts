@@ -127,7 +127,7 @@ export function reducer(state: State, action: Action): State {
         ...state,
         agents: state.agents.map((a) => (a.id === agent.id ? { ...a, paused } : a)),
         log: [
-          entry(`log-pause-${action.now}-${agent.id}`, action.now, agent, 'paused', paused ? 'Owner paused the agent.' : 'Owner resumed the agent.'),
+          entry(`log-pause-${action.now}-${agent.id}`, action.now, agent, 'paused', paused ? 'You paused this agent.' : 'You resumed this agent.'),
           ...state.log,
         ],
       };
@@ -142,7 +142,7 @@ export function reducer(state: State, action: Action): State {
       const agents = state.agents.map((a) => (a.id === agent.id ? { ...a, lastSeen: attempt.at } : a));
 
       if (decision.outcome === 'allowed') {
-        const note = decision.warning ? `${decision.reason} Warning: ${decision.warning}` : decision.reason;
+        const note = decision.warning ? `${decision.reason} Heads up: ${decision.warning}` : decision.reason;
         return { ...state, agents, log: [entry(`log-${attempt.id}`, attempt.at, agent, 'auto_allowed', note, attempt), ...state.log] };
       }
       if (decision.outcome === 'blocked') {
@@ -173,7 +173,7 @@ export function reducer(state: State, action: Action): State {
             action.now,
             agent,
             action.approve ? 'approved' : 'denied',
-            action.approve ? 'Owner approved. The agent can go ahead.' : 'Owner denied the request.',
+            action.approve ? 'You approved this. The agent can go ahead.' : "You declined this. The agent won't do it.",
             request.attempt,
           ),
           ...state.log,
@@ -207,7 +207,7 @@ export function reducer(state: State, action: Action): State {
               action.now,
               agent,
               r.status === 'skipped' ? 'skipped' : 'handed_off',
-              r.status === 'skipped' ? 'No answer in time. The Brief says skip.' : `No answer in time. Handed off to ${r.handedOffTo}.`,
+              r.status === 'skipped' ? "You didn't answer in time, so its Brief skipped it." : `You didn't answer in time, so it was handed to ${r.handedOffTo}.`,
               r.attempt,
             ),
           );

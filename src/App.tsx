@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { minutesLeft } from './engine';
 import { Activity } from './components/Activity';
 import { AgentList } from './components/AgentList';
+import { AgentHeader } from './components/AgentHeader';
 import { Approvals } from './components/Approvals';
 import { BriefEditor } from './components/BriefEditor';
 import { DashboardLayout } from './components/DashboardLayout';
@@ -9,8 +10,7 @@ import { Replay } from './components/Replay';
 import { Scenarios } from './components/Scenarios';
 import { Simulator } from './components/Simulator';
 import { Usage } from './components/Usage';
-import { Avatar, Icon, Toasts, useNow, useToasts, type IconName } from './components/ui';
-import { LEVEL_HELP } from './status';
+import { ConfirmPanel, Icon, Toasts, useNow, useToasts, type IconName } from './components/ui';
 import { useStore } from './store';
 
 type Tab = 'briefs' | 'approvals' | 'try' | 'replay' | 'activity';
@@ -26,6 +26,7 @@ const TABS: { id: Tab; label: string; icon: IconName; hint: string }[] = [
 export function App() {
   const [state, dispatch] = useStore();
   const [tab, setTab] = useState<Tab>('briefs');
+  const [resetting, setResetting] = useState<'reset' | 'empty' | null>(null);
   const now = useNow();
   const { toasts, notify, dismiss } = useToasts();
 
@@ -37,7 +38,27 @@ export function App() {
   // Only results from the simulator itself, not the seeded activity or real history.
   const lastEntry = agent ? state.log.find((e) => e.agentId === agent.id && e.attempt && (e.source ?? 'you') === 'you') : undefined;
   const select = (agentId: string) => dispatch({ type: 'select', agentId });
+  const waitingNote = open.length
+    ? soonest !== undefined
+      ? `Next one runs out in ${soonest} min`
+      : 'Still waiting for your answer'
+    : 'Nothing needs you';
   const activeCount = state.agents.filter((a) => !a.paused).length;
+  const pausedCount = state.agents.length - activeCount;
+  const editorRef = useRef<HTMLDivElement>(null);
+  const calmMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Below this width the Brief editor sits under the agent list instead of beside it.
+  const stacked = () => window.matchMedia('(max-width: 900px)').matches;
+  const selectFromList = (agentId: string) => {
+    select(agentId);
+    if (stacked()) {
+      requestAnimationFrame(() => editorRef.current?.scrollIntoView({ behavior: calmMotion() ? 'auto' : 'smooth', block: 'start' }));
+    }
+  };
+  const backToAgents = () => {
+    document.getElementById('agent-list')?.scrollIntoView({ behavior: calmMotion() ? 'auto' : 'smooth', block: 'start' });
+    document.querySelector<HTMLElement>('.agent-item.selected')?.focus({ preventScroll: true });
+  };
   // Every one of these is a decision a Brief made: allowed, stopped, asked, skipped or handed off.
   const decisions = state.log.filter((e) => e.kind !== 'history' && e.kind !== 'paused').length;
 
@@ -50,6 +71,10 @@ export function App() {
       }}
     >
       <header className="hero">
+        <span className="bubble b1" aria-hidden="true" />
+        <span className="bubble b2" aria-hidden="true" />
+        <span className="bubble b3" aria-hidden="true" />
+        <span className="bubble b4" aria-hidden="true" />
         <div className="hero-text">
           <p className="eyebrow">
             <Icon name="spark" size={16} /> Your agents, your rules
@@ -61,60 +86,52 @@ export function App() {
             Decide once what each agent may do on its own, what needs your yes, and what happens when you are away.
           </p>
         </div>
-        <dl className="hero-stats">
-          <div className="hero-stat">
-            <dt>
-              <Icon name="users" size={15} /> Agents
-            </dt>
-            <dd>{state.agents.length}</dd>
-            <span>{activeCount} active</span>
-          </div>
-          <div className={`hero-stat${open.length ? ' hot' : ''}`}>
-            <dt>
-              <Icon name="hand" size={15} /> Waiting for you
-            </dt>
-            <dd>{open.length}</dd>
-            <span>{open.length ? 'Needs your yes' : 'All clear'}</span>
-          </div>
-          <div className="hero-stat">
-            <dt>
-              <Icon name="shield" size={15} /> Brief decisions
-            </dt>
-            <dd>{decisions}</dd>
-            <span>Allowed, stopped or asked</span>
-          </div>
-        </dl>
+        <ul className="hero-stats">
+          <li>
+            <div className="hero-stat s-agents">
+              <span className="stat-label">
+                <Icon name="users" size={15} /> Agents
+              </span>
+              <span className="stat-value">{state.agents.length}</span>
+              <span className="stat-note">
+                {activeCount} active{pausedCount ? ` · ${pausedCount} paused` : ''}
+              </span>
+            </div>
+          </li>
+          <li>
+            <button
+              className={`hero-stat s-wait${open.length ? ' hot' : ''}`}
+              onClick={() => setTab('approvals')}
+              aria-label={`${open.length} waiting for you. ${waitingNote}. Open Approvals.`}
+            >
+              <span className="stat-label">
+                <Icon name="hand" size={15} /> Waiting for you
+              </span>
+              <span className="stat-value">{open.length}</span>
+              <span className="stat-note">{waitingNote}</span>
+              <span className="stat-cue">
+                {open.length ? 'Review now' : 'Open Approvals'} <Icon name="arrow" size={14} />
+              </span>
+            </button>
+          </li>
+          <li>
+            <div className="hero-stat s-decide">
+              <span className="stat-label">
+                <Icon name="shield" size={15} /> Brief decisions
+              </span>
+              <span className="stat-value">{decisions}</span>
+              <span className="stat-note">Allowed, stopped or asked</span>
+            </div>
+          </li>
+        </ul>
       </header>
-
-      {open.length > 0 && tab !== 'approvals' ? (
-        <div className="attention" role="region" aria-label="Needs your attention">
-          <span className="attention-icon">
-            <Icon name="hand" size={20} />
-          </span>
-          <div>
-            <p className="attention-title">
-              {open.length === 1 ? '1 request is' : `${open.length} requests are`} waiting for your yes
-            </p>
-            <p className="small">
-              {soonest !== undefined ? `The next one runs out in ${soonest} min. ` : ''}Your agents do nothing about these until you answer.
-            </p>
-          </div>
-          <button className="primary" onClick={() => setTab('approvals')}>
-            Review now <Icon name="arrow" size={16} />
-          </button>
-        </div>
-      ) : (
-        open.length === 0 && (
-          <p className="calm">
-            <Icon name="check" size={16} /> Nothing is waiting for you.
-          </p>
-        )
-      )}
 
       <nav className="tabs" aria-label="Agent Briefs sections">
         {TABS.map((t) => (
-          <button key={t.id} className={tab === t.id ? 'active' : ''} aria-current={tab === t.id ? 'page' : undefined} title={t.hint} onClick={() => setTab(t.id)}>
-            <Icon name={t.icon} size={16} />
+          <button key={t.id} className={`tab-${t.id}${tab === t.id ? ' active' : ''}`} aria-current={tab === t.id ? 'page' : undefined} title={t.hint} onClick={() => setTab(t.id)}>
+            <span className="tab-icon">
+              <Icon name={t.icon} size={15} />
+            </span>
             {t.label}
             {t.id === 'approvals' && open.length > 0 && <span className="count-badge">{open.length}</span>}
           </button>
@@ -128,37 +145,35 @@ export function App() {
             selectedId={agent.id}
             pendingByAgent={pendingByAgent}
             now={now}
-            onSelect={select}
+            onSelect={selectFromList}
             onAdd={(name, level) => {
               dispatch({ type: 'add_agent', id: `agent-${Date.now()}`, name, level, now: new Date().toISOString() });
               notify(`Added ${name} with a starting Brief for a ${level}.`);
             }}
           />
-          <div className="column">
-            <section className="panel agent-head" aria-label={`${agent.name} at a glance`}>
-              <Avatar id={agent.id} name={agent.name} size="lg" />
-              <div className="agent-head-text">
-                <p className="agent-head-name">
-                  {agent.name} <span className="role">{agent.level}</span>
-                </p>
-                <p className="muted small">
-                  {LEVEL_HELP[agent.level]}{' '}
-                  {agent.paused ? 'Paused: it will not act until you resume it.' : 'Active: it acts within its Brief.'}
-                </p>
-              </div>
-              <button
-                className={agent.paused ? 'primary' : ''}
-                onClick={() => {
-                  dispatch({ type: 'toggle_pause', agentId: agent.id, now: new Date().toISOString() });
-                  notify(
-                    agent.paused ? `${agent.name} is active again.` : `${agent.name} is paused. It won't act until you resume it.`,
-                    agent.paused ? 'ok' : 'warn',
-                  );
-                }}
-              >
-                <Icon name={agent.paused ? 'play' : 'pause'} size={16} /> {agent.paused ? 'Resume' : 'Pause'}
-              </button>
-            </section>
+          <div className="column" ref={editorRef}>
+            <a
+              className="back-link"
+              href="#agent-list"
+              onClick={(e) => {
+                e.preventDefault();
+                backToAgents();
+              }}
+            >
+              <Icon name="arrow" size={14} /> Back to agents
+            </a>
+            <AgentHeader
+              agent={agent}
+              waiting={pendingByAgent[agent.id] ?? 0}
+              onPause={() => {
+                dispatch({ type: 'toggle_pause', agentId: agent.id, now: new Date().toISOString() });
+                notify(`${agent.name} is paused. It won't start anything new until you resume it.`, 'warn');
+              }}
+              onResume={() => {
+                dispatch({ type: 'toggle_pause', agentId: agent.id, now: new Date().toISOString() });
+                notify(`${agent.name} is active again.`);
+              }}
+            />
             <BriefEditor
               key={`${agent.id}-${agent.brief.version}`}
               agent={agent}
@@ -222,31 +237,31 @@ export function App() {
           stored in this browser only.
         </p>
         <p className="foot-actions">
-          <button
-            className="ghost small"
-            onClick={() => {
-              if (window.confirm('Reload your Ziki data and the starting activity? Changes made in this browser will be lost.')) {
-                dispatch({ type: 'reset', now: new Date().toISOString() });
-                setTab('briefs');
-                notify('Back to the starting data.');
-              }
-            }}
-          >
+          <button className="ghost small" onClick={() => setResetting('reset')}>
             Reset to starting data
           </button>
-          <button
-            className="ghost small"
-            onClick={() => {
-              if (window.confirm('Go back to your five agents with their starting Briefs, with no activity or approvals?')) {
-                dispatch({ type: 'reset', now: new Date().toISOString(), empty: true });
-                setTab('briefs');
-                notify('Started fresh with no activity.');
-              }
-            }}
-          >
+          <button className="ghost small" onClick={() => setResetting('empty')}>
             Start with no activity
           </button>
         </p>
+        {resetting && (
+          <ConfirmPanel
+            title={resetting === 'reset' ? 'Go back to the starting data?' : 'Start with no activity?'}
+            confirmLabel={resetting === 'reset' ? 'Reset to starting data' : 'Start with no activity'}
+            cancelLabel="Keep what I have"
+            onCancel={() => setResetting(null)}
+            onConfirm={() => {
+              dispatch({ type: 'reset', now: new Date().toISOString(), empty: resetting === 'empty' });
+              setResetting(null);
+              setTab('briefs');
+              notify(resetting === 'reset' ? 'Back to the starting data.' : 'Started fresh with no activity.');
+            }}
+          >
+            {resetting === 'reset'
+              ? 'Your five agents go back to their starting Briefs and the real Ziki history is reloaded. Changes you made in this browser, including any agents you added, are lost.'
+              : 'Your five agents go back to their starting Briefs, and all activity and approvals are cleared. Changes you made in this browser, including any agents you added, are lost.'}
+          </ConfirmPanel>
+        )}
       </footer>
       <Toasts toasts={toasts} dismiss={dismiss} />
     </DashboardLayout>

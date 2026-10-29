@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { LEVEL_HELP, timeAgo } from '../status';
 import type { Agent } from '../types';
-import { Avatar, Icon } from './ui';
+import { Avatar, Icon, Pill } from './ui';
 
 interface Props {
   agents: Agent[];
@@ -21,7 +21,7 @@ export function AgentList({ agents, selectedId, pendingByAgent, now, onSelect, o
   const [error, setError] = useState('');
 
   return (
-    <section className="panel agent-list" aria-labelledby="agents-title">
+    <section className="panel agent-list" id="agent-list" tabIndex={-1} aria-labelledby="agents-title">
       <h2 id="agents-title">Your agents</h2>
       <p className="muted small">Pick an agent to see and change its Brief.</p>
       <ul className="agent-items">
@@ -30,7 +30,7 @@ export function AgentList({ agents, selectedId, pendingByAgent, now, onSelect, o
           return (
             <li key={a.id}>
               <button
-                className={`agent-item${a.id === selectedId ? ' selected' : ''}`}
+                className={`agent-item${a.id === selectedId ? ' selected' : ''}${a.paused ? ' paused' : ''}`}
                 aria-current={a.id === selectedId ? 'true' : undefined}
                 onClick={() => onSelect(a.id)}
               >
@@ -39,11 +39,12 @@ export function AgentList({ agents, selectedId, pendingByAgent, now, onSelect, o
                   <span className="agent-name">{a.name}</span>
                   <span className="agent-meta">
                     <span className={`dot ${a.paused ? 'dot-paused' : 'dot-active'}`} aria-hidden="true" />
-                    {a.paused ? 'Paused' : 'Active'} · {timeAgo(a.lastSeen, now)}
+                    {a.paused ? `Last seen ${timeAgo(a.lastSeen, now).toLowerCase()}` : `Active · ${timeAgo(a.lastSeen, now)}`}
                   </span>
                 </span>
                 <span className="agent-side">
                   <span className="role">{a.level}</span>
+                  {a.paused && <Pill tone="neutral">Paused</Pill>}
                   {pending > 0 && <span className="count-badge">{pending} {pending === 1 ? 'needs' : 'need'} you</span>}
                 </span>
               </button>
